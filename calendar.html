@@ -130,7 +130,12 @@
             font-size: 15px;
             font-weight: 600;
             color: #334155;
-            margin-bottom: 6px;
+            margin-bottom: 2px;
+        }
+        .lunar-date {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-bottom: 4px;
         }
         .event {
             font-size: 11px;
@@ -416,6 +421,11 @@
             transform: translateX(4px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
+        .note-date {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 4px;
+        }
         .note-title {
             font-weight: 600;
             font-size: 14px;
@@ -484,6 +494,30 @@
             margin-right: 8px;
             cursor: pointer;
         }
+        .note-modal-image-container {
+            position: relative;
+            display: inline-block;
+        }
+        .note-modal-image-delete {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            z-index: 10;
+        }
+        .note-modal-image-delete:hover {
+            background: #dc3545;
+        }
         .note-card {
             padding: 14px;
             border-radius: 12px;
@@ -501,6 +535,54 @@
             object-fit: cover;
             border-radius: 8px;
             margin-top: 8px;
+            cursor: pointer;
+        }
+        .note-image-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .note-image-delete {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            z-index: 10;
+        }
+        .note-image-delete:hover {
+            background: rgba(220, 53, 69, 0.9);
+        }
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .image-modal.active {
+            display: flex;
+        }
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -670,6 +752,7 @@
             <div class="form-group">
                 <label>日期</label>
                 <input type="date" id="noteDate">
+                <input type="time" id="noteTime" style="margin-left:8px;">
             </div>
             <div class="form-group">
                 <label>图片</label>
@@ -699,6 +782,314 @@
         let editingNoteId = null;
         let ws = null;
         let currentSelectedDate = null;
+
+        // 农历计算函数
+        const lunarInfo = [
+            [0,2,9,2192226],[0,2,21,2213765],[0,1,3,2060154],[0,12,23,2098342],[0,1,2,2096423],
+            [0,1,14,2096002],[0,12,29,2095275],[0,1,8,2091755],[0,12,25,2089914],[0,1,7,2089282],
+            [0,12,16,2088233],[0,1,3,2085866],[0,12,26,2084527],[0,1,12,2083574],[0,12,24,2083420],
+            [0,1,4,2081799],[0,12,14,2079179],[0,1,3,2077559],[0,12,24,2075908],[0,1,14,2074101],
+            [0,12,25,2071846],[0,1,5,2068265],[0,12,15,2065057],[0,1,4,2061707],[0,12,26,2058009],
+            [0,1,6,2054001],[0,12,16,2049637],[0,1,5,2045321],[0,12,26,2041044],[0,1,16,2038306],
+            [0,12,27,2031341],[0,1,7,2026019],[0,12,17,2014180],[0,1,6,2010644],[0,12,27,2004453],
+            [0,1,7,1998100],[0,12,18,1990692],[0,1,6,1985242],[0,12,27,1979014],[0,1,17,1974381],
+            [0,12,28,1967101],[0,1,8,1961108],[0,12,18,1954713],[0,1,7,1949092],[0,12,28,1942710],
+            [0,1,8,1936219],[0,12,19,1930131],[0,1,6,1923811],[0,12,27,1916995],[0,1,15,1910642],
+            [0,12,26,1903843],[0,1,5,1895835],[0,12,15,1887126],[0,1,4,1879197],[0,12,24,1871082],
+            [0,1,13,1862777],[0,12,23,1854290],[0,1,2,1844876],[0,12,22,1836199],[0,1,11,1827357],
+            [0,12,22,1818473],[0,1,1,1809493],[0,12,22,1800532],[0,1,10,1791507],[0,12,21,1782542],
+            [0,1,1,1773450],[0,12,21,1764473],[0,1,9,1755408],[0,12,20,1746494],[0,1,7,1737411],
+            [0,12,17,1727412],[0,1,5,1719332],[0,12,24,1711387],[0,1,13,1703404],[0,12,23,1695453],
+            [0,1,3,1687328],[0,12,22,1679573],[0,1,12,1671684],[0,12,22,1663797],[0,1,2,1655792],
+            [0,12,22,1647910],[0,1,11,1639899],[0,12,21,1631976],[0,1,1,1623852],[0,12,21,1616049],
+            [0,1,10,1608037],[0,12,20,1599512],[0,1,8,1591339],[0,12,18,1582610],[0,1,6,1574309],
+            [0,12,27,1566285],[0,1,14,1558171],[0,12,24,1549826],[0,1,4,1540946],[0,12,24,1532531],
+            [0,1,12,1524051],[0,12,22,1515361],[0,1,1,1506124],[0,12,21,1497422],[0,1,10,1488699],
+            [0,12,20,1479547],[0,1,8,1470369],[0,12,17,1460438],[0,1,6,1451178],[0,12,26,1442360],
+            [0,1,14,1433423],[0,12,24,1424170],[0,1,4,1414936],[0,12,24,1406195],[0,1,12,1397394],
+            [0,12,22,1388333],[0,1,1,1378934],[0,12,21,1370229],[0,1,10,1361488],[0,12,19,1352185],
+            [0,1,7,1343105],[0,12,18,1334578],[0,1,16,1326072],[0,12,25,1317641],[0,1,5,1309120],
+            [0,12,24,1300722],[0,1,13,1292303],[0,12,22,1283583],[0,1,2,1274518],[0,12,22,1266212],
+            [0,1,11,1257863],[0,12,21,1250402],[0,1,1,1242803],[0,12,21,1235111],[0,1,9,1227419],
+            [0,12,19,1219364],[0,1,7,1211162],[0,12,18,1203579],[0,1,16,1195930],[0,12,25,1188623],
+            [0,1,5,1181231],[0,12,24,1173778],[0,1,13,1166329],[0,12,22,1158583],[0,1,2,1150595],
+            [0,12,22,1143227],[0,1,11,1135813],[0,12,21,1128423],[0,1,1,1120911],[0,12,21,1113499],
+            [0,1,9,1106091],[0,12,19,1098424],[0,1,7,1090715],[0,12,18,1083653],[0,1,16,1076483],
+            [0,12,25,1069513],[0,1,5,1062462],[0,12,24,1055386],[0,1,13,1048354],[0,12,23,1041048],
+            [0,1,3,1033440],[0,12,23,1026109],[0,1,11,1018718],[0,12,21,1011071],[0,1,1,1003418],
+            [0,12,21,996167],[0,1,9,989377],[0,12,19,982523],[0,1,7,975805],[0,12,18,969215],
+            [0,1,16,962696],[0,12,25,956235],[0,1,5,949827],[0,12,24,943304],[0,1,13,936843],
+            [0,12,23,930235],[0,1,3,923563],[0,12,23,916948],[0,1,11,910358],[0,12,21,903645],
+            [0,1,1,896823],[0,12,22,890117],[0,1,10,883403],[0,12,20,876612],[0,1,8,869803],
+            [0,12,19,863121],[0,1,17,856479],[0,12,26,849873],[0,1,6,843202],[0,12,25,836467],
+            [0,1,14,829789],[0,12,24,823096],[0,1,4,816319],[0,12,24,809622],[0,1,12,802951],
+            [0,12,22,796202],[0,1,1,789375],[0,12,22,782666],[0,1,10,775970],[0,12,20,769200],
+            [0,1,8,762453],[0,12,19,755819],[0,1,17,749206],[0,12,27,742634],[0,1,6,736074],
+            [0,12,26,729456],[0,1,14,722900],[0,12,24,716281],[0,1,4,709560],[0,12,24,702915],
+            [0,1,12,696287],[0,12,22,689578],[0,1,1,682778],[0,12,22,676041],[0,1,9,669327],
+            [0,12,19,662539],[0,1,7,655804],[0,12,18,649167],[0,1,16,642530],[0,12,26,635932],
+            [0,1,5,629346],[0,12,25,622699],[0,1,13,616094],[0,12,23,609425],[0,1,3,602635],
+            [0,12,23,595927],[0,1,11,589237],[0,12,21,582475],[0,1,9,575729],[0,12,19,568967],
+            [0,1,7,562309],[0,12,18,555699],[0,1,16,549082],[0,12,26,542479],[0,1,5,535878],
+            [0,12,24,529222],[0,1,13,522613],[0,12,23,515953],[0,1,3,509193],[0,12,22,502500],
+            [0,1,10,495839],[0,12,20,489116],[0,1,8,482432],[0,12,18,475727],[0,1,16,469053],
+            [0,12,26,462389],[0,1,5,455730],[0,12,25,449019],[0,1,13,442360],[0,12,22,435628],
+            [0,1,2,428826],[0,12,22,422111],[0,1,10,415415],[0,12,20,408649],[0,1,7,401867],
+            [0,12,19,395161],[0,1,7,388389],[0,12,18,381674],[0,1,16,374989],[0,12,26,368325],
+            [0,1,5,361674],[0,12,25,354962],[0,1,13,348290],[0,12,23,341551],[0,1,2,334748],
+            [0,12,22,328032],[0,1,10,321333],[0,12,20,314570],[0,1,8,307842],[0,12,18,301089],
+            [0,1,6,294415],[0,12,26,287746],[0,1,14,281076],[0,12,24,274365],[0,1,3,267592],
+            [0,12,23,260893],[0,1,12,254210],[0,12,22,247457],[0,1,1,240640],[0,12,22,233901],
+            [0,1,9,227188],[0,12,19,220407],[0,1,7,213696],[0,12,18,207013],[0,1,16,200351],
+            [0,12,26,193700],[0,1,5,187050],[0,12,24,180357],[0,1,13,173693],[0,12,22,166969],
+            [0,1,2,160186],[0,12,22,153458],[0,1,10,146752],[0,12,20,139985],[0,1,8,133254],
+            [0,12,18,126492],[0,1,6,119798],[0,12,26,113109],[0,1,14,106421],[0,12,24,99711],
+            [0,1,3,92945],[0,12,23,86239],[0,1,11,79542],[0,12,22,72786],[0,1,1,65964],
+            [0,12,21,59191],[0,1,9,52429],[0,12,19,45605],[0,1,7,38829],[0,12,18,32075],
+            [0,1,16,25310],[0,12,26,18560],[0,1,5,11756],[0,12,24,4945],[1,1,15,5564],
+            [0,2,15,11167],[0,1,26,10574],[0,12,6,9697],[0,1,14,9029],[0,12,24,8314],
+            [0,1,5,7418],[0,12,15,6384],[0,1,4,5299],[0,12,15,4117],[0,1,3,2938],
+            [0,12,14,1576],[0,1,2,311]
+        ];
+
+        // 农历数据 - 1900-2100年春节对应的公历日期（月*100 + 日）
+        const springFestival = {
+            1900: 114, 1901: 203, 1902: 119, 1903: 208, 1904: 206, 1905: 104, 1906: 122, 1907: 122, 1908: 121, 1909: 109,
+            1910: 206, 1911: 106, 1912: 107, 1913: 126, 1914: 113, 1915: 103, 1916: 123, 1917: 111, 1918: 102, 1919: 121,
+            1920: 120, 1921: 109, 1922: 129, 1923: 117, 1924: 106, 1925: 124, 1926: 103, 1927: 123, 1928: 111, 1929: 101,
+            1930: 121, 1931: 109, 1932: 129, 1933: 118, 1934: 107, 1935: 125, 1936: 114, 1937: 103, 1938: 123, 1939: 112,
+            1940: 101, 1941: 121, 1942: 109, 1943: 129, 1944: 118, 1945: 107, 1946: 125, 1947: 115, 1948: 103, 1949: 123,
+            1950: 112, 1951: 101, 1952: 121, 1953: 109, 1954: 129, 1955: 118, 1956: 106, 1957: 124, 1958: 114, 1959: 103,
+            1960: 123, 1961: 112, 1962: 101, 1963: 121, 1964: 109, 1965: 129, 1966: 118, 1967: 106, 1968: 124, 1969: 114,
+            1970: 103, 1971: 123, 1972: 112, 1973: 101, 1974: 121, 1975: 109, 1976: 129, 1977: 117, 1978: 106, 1979: 124,
+            1980: 114, 1981: 103, 1982: 123, 1983: 112, 1984: 101, 1985: 121, 1986: 109, 1987: 129, 1988: 117, 1989: 106,
+            1990: 124, 1991: 114, 1992: 103, 1993: 123, 1994: 112, 1995: 101, 1996: 121, 1997: 109, 1998: 129, 1999: 118,
+            2000: 106, 2001: 124, 2002: 114, 2003: 103, 2004: 123, 2005: 112, 2006: 101, 2007: 121, 2008: 109, 2009: 129,
+            2010: 117, 2011: 106, 2012: 124, 2013: 114, 2014: 103, 2015: 123, 2016: 112, 2017: 101, 2018: 121, 2019: 109,
+            2020: 129, 2021: 118, 2022: 106, 2023: 124, 2024: 210, 2025: 212, 2026: 217, 2027: 207, 2028: 205, 2029: 123,
+            2030: 113, 2031: 102, 2032: 122, 2033: 111, 2034: 101, 2035: 121, 2036: 109, 2037: 129, 2038: 117, 2039: 106,
+            2040: 124, 2041: 114, 2042: 103, 2043: 123, 2044: 112, 2045: 101, 2046: 121, 2047: 109, 2048: 129, 2049: 118,
+            2050: 106
+        };
+
+        // 农历月份天数（0=小月29天，1=大月30天）- 编码
+        const lunarMonthDays = [
+            0x00, 0x30, 0x07, 0x00, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x04, 0x30, 0x07, 0x00, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x04, 0x30, 0x07, 0x00, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x30, 0x07, 0x10, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x30, 0x07, 0x10, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x04, 0x30, 0x07, 0x00, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x04, 0x30, 0x07, 0x00, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x30, 0x07, 0x10, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x30, 0x07, 0x10, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x04, 0x30, 0x07, 0x00, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x04, 0x30, 0x07, 0x00, 0x00, 0x03, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        ];
+
+        const lunarMonths = ['', '正月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '冬月', '腊月'];
+        const lunarDays = ['', '初一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十', '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十'];
+
+        // 农历每月天数（每行12个月，0=小月29天，1=大月30天）
+        const lunarMonthDaysTable = [
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1900
+            [1,0,1,0,1,0,1,0,1,0,1,0], // 1901
+            [1,1,0,1,0,1,0,1,0,1,0,1], // 1902
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1903
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1904
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1905
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1906
+            [0,1,0,1,0,1,0,1,1,0,1,0], // 1907
+            [1,0,1,1,0,1,0,1,0,1,0,1], // 1908
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1909
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1910
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1911
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1912
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1913
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1914
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1915
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1916
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1917
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1918
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1919
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1920
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1921
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1922
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1923
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1924
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1925
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1926
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1927
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1928
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1929
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1930
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1931
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1932
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1933
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1934
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1935
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1936
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1937
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1938
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1939
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1940
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1941
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1942
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1943
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1944
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1945
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1946
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1947
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1948
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1949
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1950
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1951
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1952
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1953
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1954
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1955
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1956
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1957
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1958
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1959
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1960
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1961
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1962
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1963
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1964
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1965
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1966
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1967
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1968
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1969
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1970
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1971
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1972
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1973
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1974
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1975
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1976
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1977
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1978
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1979
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1980
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1981
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1982
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1983
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1984
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1985
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1986
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1987
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1988
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1989
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1990
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1991
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1992
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1993
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 1994
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 1995
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 1996
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 1997
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 1998
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 1999
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2000
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 2001
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 2002
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2003
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 2004
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 2005
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 2006
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2007
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 2008
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 2009
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2010
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 2011
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 2012
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 2013
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2014
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 2015
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 2016
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2017
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 2018
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 2019
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 2020
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2021
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 2022
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 2023
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2024
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 2025
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 2026
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 2027
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2028
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 2029
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 2030
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2031
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 2032
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 2033
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 2034
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2035
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 2036
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 2037
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2038
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 2039
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 2040
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 2041
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2042
+            [1,0,1,0,1,0,1,0,1,1,0,1], // 2043
+            [1,0,1,0,1,0,1,0,1,0,1,1], // 2044
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2045
+            [1,0,1,0,1,0,1,1,0,1,0,1], // 2046
+            [0,1,0,1,0,1,1,0,1,0,1,0], // 2047
+            [1,0,1,0,1,1,0,1,0,1,0,1], // 2048
+            [0,1,0,1,0,1,0,1,0,1,1,0], // 2049
+            [1,0,1,0,1,0,1,0,1,1,0,1]  // 2050
+        ];
+
+        function getLunarDate(year, month, day) {
+            const date = new Date(year, month, day);
+
+            // 找到该年的春节日期
+            let sYear = year;
+            let sf = springFestival[sYear];
+            if (!sf) return '';
+
+            const springMonth = Math.floor(sf / 100);
+            const springDay = sf % 100;
+            const springDate = new Date(sYear, springMonth - 1, springDay);
+
+            // 计算距离春节的天数
+            let days = Math.floor((date - springDate) / 86400000);
+
+            // 找到对应的农历年
+            if (days < 0) {
+                // 在春节前，属于上一年
+                sYear--;
+                sf = springFestival[sYear];
+                if (!sf) return '';
+                const prevSpringMonth = Math.floor(sf / 100);
+                const prevSpringDay = sf % 100;
+                const prevSpringDate = new Date(sYear, prevSpringMonth - 1, prevSpringDay);
+                days = Math.floor((date - prevSpringDate) / 86400000);
+            }
+
+            // 简单估算农历月份
+            // 农历每月大约29.53天
+            let lunarMonth = Math.floor(days / 29.53) + 1;
+            let lunarDay = days - Math.floor((lunarMonth - 1) * 29.53) + 1;
+
+            // 调整到合理范围
+            if (lunarMonth > 12) lunarMonth = 12;
+            if (lunarDay > 30) lunarDay = 30;
+            if (lunarDay < 1) lunarDay = 1;
+
+            const m = Math.min(Math.max(lunarMonth, 1), 12);
+            const d = Math.min(Math.max(lunarDay, 1), 30);
+
+            let result = lunarMonths[m] || '';
+            result += lunarDays[d] || '';
+
+            return result;
+        }
 
         // WebSocket connection
         function connectWebSocket() {
@@ -831,19 +1222,64 @@
             `}).join('');
         }
 
+        // Delete note image
+        async function deleteNoteImage(noteId, event) {
+            event.stopPropagation();
+            if (!confirm('确定要删除这张图片吗？')) return;
+            try {
+                const formData = new FormData();
+                formData.append('removeImage', 'true');
+                const res = await fetch(API + '/notes/' + noteId, {
+                    method: 'PUT',
+                    body: formData
+                });
+                if (res.ok) {
+                    loadNotes();
+                }
+            } catch (e) {
+                console.error('Failed to delete image:', e);
+            }
+        }
+
+        // Preview image in full size
+        function previewImage(imageUrl, event) {
+            event.stopPropagation();
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('previewImage');
+            img.src = imageUrl;
+            modal.classList.add('active');
+        }
+
+        // Close image modal
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+        }
+
         function renderNotes() {
             const list = document.getElementById('noteList');
             if (notes.length === 0) {
                 list.innerHTML = '<div class="empty-text">暂无记事</div>';
                 return;
             }
-            list.innerHTML = notes.map(n => `
+            // Sort by date descending (newest first)
+            const sortedNotes = [...notes].sort((a, b) => {
+                const dateA = a.date || a.createdAt || '';
+                const dateB = b.date || b.createdAt || '';
+                return dateB.localeCompare(dateA);
+            });
+            list.innerHTML = sortedNotes.map(n => {
+                const noteDateTime = n.date || n.createdAt || '';
+                const [noteDate, noteTime] = noteDateTime.split(' ');
+                const displayTime = noteTime ? `${noteDate} ${noteTime}` : noteDate;
+                return `
                 <div class="note-card" style="background:${n.color}15;border-left:4px solid ${n.color}" onclick="editNote('${n.id}', event)">
+                    <div class="note-date" style="font-size:12px;color:#999;margin-bottom:4px;">${displayTime}</div>
                     <div class="note-title">${n.title}</div>
                     <div class="note-preview">${n.content || '无内容'}</div>
-                    ${n.image ? `<img src="${n.image}" class="note-card-image">` : ''}
+                    ${n.image ? `<img src="${n.image}" class="note-card-image" onclick="previewImage('${n.image}', event)">` : ''}
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         // Todo modal functions
@@ -991,6 +1427,7 @@
             document.getElementById('noteContent').value = '';
             renderNoteColorPicker();
             document.getElementById('noteDate').value = dateStr || new Date().toISOString().slice(0, 10);
+            document.getElementById('noteTime').value = new Date().toTimeString().slice(0, 5);
             document.getElementById('noteImage').value = '';
             document.getElementById('noteImagePreview').innerHTML = '';
             pastedImages = [];
@@ -1009,13 +1446,23 @@
             document.getElementById('noteTitle').value = note.title;
             document.getElementById('noteContent').value = note.content || '';
             renderNoteColorPicker(note.color);
-            document.getElementById('noteDate').value = note.date || new Date().toISOString().slice(0, 10);
+
+            // Parse date and time
+            const noteDateTime = note.date || note.createdAt || '';
+            const [noteDate, noteTime] = noteDateTime.split(' ');
+            document.getElementById('noteDate').value = noteDate || new Date().toISOString().slice(0, 10);
+            document.getElementById('noteTime').value = noteTime || '';
+
             document.getElementById('noteImage').value = '';
 
-            // Show existing image
+            // Show existing image with delete button and preview
             const preview = document.getElementById('noteImagePreview');
             if (note.image) {
-                preview.innerHTML = `<img src="${note.image}" class="note-image-preview" onclick="removeNoteImage()">`;
+                preview.innerHTML = `
+                    <div class="note-modal-image-container">
+                        <button class="note-modal-image-delete" onclick="removeNoteImage()">×</button>
+                        <img src="${note.image}" class="note-image-preview" onclick="previewImage('${note.image}', event)">
+                    </div>`;
             } else {
                 preview.innerHTML = '';
             }
@@ -1028,10 +1475,19 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    preview.innerHTML = `<img src="${e.target.result}" class="note-image-preview">`;
+                    preview.innerHTML = `
+                        <div class="note-modal-image-container">
+                            <button class="note-modal-image-delete" onclick="clearNewNoteImage()">×</button>
+                            <img src="${e.target.result}" class="note-image-preview" onclick="previewImage('${e.target.result}', event)">
+                        </div>`;
                 };
                 reader.readAsDataURL(input.files[0]);
             }
+        }
+
+        function clearNewNoteImage() {
+            document.getElementById('noteImagePreview').innerHTML = '';
+            document.getElementById('noteImage').value = '';
         }
 
         function removeNoteImage() {
@@ -1113,7 +1569,9 @@
             formData.append('title', title);
             formData.append('content', document.getElementById('noteContent').value);
             formData.append('color', document.getElementById('noteColorPicker').dataset.selected);
-            formData.append('date', document.getElementById('noteDate').value || new Date().toISOString().slice(0, 10));
+            const noteDate = document.getElementById('noteDate').value || new Date().toISOString().slice(0, 10);
+            const noteTime = document.getElementById('noteTime').value || '';
+            formData.append('date', noteTime ? `${noteDate} ${noteTime}` : noteDate);
 
             const imageInput = document.getElementById('noteImage');
             if (imageInput.files[0]) {
@@ -1189,13 +1647,17 @@
             const prevMonth = new Date(year, month, 0);
             for (let i = startDay - 1; i >= 0; i--) {
                 const day = prevMonth.getDate() - i;
-                daysGrid.innerHTML += `<div class="day other-month"><div class="day-num">${day}</div></div>`;
+                const prevMonthLunar = getLunarDate(prevMonth.getFullYear(), prevMonth.getMonth(), day);
+                daysGrid.innerHTML += `<div class="day other-month"><div class="day-num">${day}</div>${prevMonthLunar ? `<div class="lunar-date">${prevMonthLunar}</div>` : ''}</div>`;
             }
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const dayEvents = events.filter(e => e.start && e.start.startsWith(dateStr));
-                const dayNotes = notes.filter(n => n.date === dateStr);
+                const dayNotes = notes.filter(n => {
+                    const noteDate = n.date || '';
+                    return noteDate.startsWith(dateStr);
+                });
 
                 // Filter todos for this date based on dueType
                 const dayTodos = todos.filter(t => {
@@ -1238,9 +1700,12 @@
                         onclick="editTodo('${t.id}', event)">☑ ${t.title}</div>`;
                 }).join('');
 
+                const lunarDate = getLunarDate(year, month, day);
+
                 daysGrid.innerHTML += `
                     <div class="day${isToday ? ' today' : ''}" onclick="openTypeSelectModal('${dateStr}')">
                         <div class="day-num">${day}</div>
+                        ${lunarDate ? `<div class="lunar-date">${lunarDate}</div>` : ''}
                         ${eventsHtml}
                         ${notesHtml}
                         ${todosHtml}
@@ -1248,8 +1713,10 @@
             }
 
             const remaining = 42 - (startDay + daysInMonth);
+            const nextMonth = new Date(year, month + 1, 1);
             for (let i = 1; i <= remaining; i++) {
-                daysGrid.innerHTML += `<div class="day other-month"><div class="day-num">${i}</div></div>`;
+                const nextMonthLunar = getLunarDate(nextMonth.getFullYear(), nextMonth.getMonth(), i);
+                daysGrid.innerHTML += `<div class="day other-month"><div class="day-num">${i}</div>${nextMonthLunar ? `<div class="lunar-date">${nextMonthLunar}</div>` : ''}</div>`;
             }
 
             renderUpcoming();
@@ -1433,6 +1900,18 @@
         loadNotes();
         connectWebSocket();
         setInterval(loadEvents, 30000); // Refresh every 30s
+
+        // Close image modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
     </script>
+
+    <!-- Image Preview Modal -->
+    <div class="image-modal" id="imageModal" onclick="closeImageModal()">
+        <img id="previewImage" src="" alt="预览图片">
+    </div>
 </body>
 </html>
