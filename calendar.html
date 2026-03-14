@@ -37,7 +37,7 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.1);
         }
         .header h1 {
-            font-size: 32px;
+            font-size: 20px;
             background: #1f2937;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -48,17 +48,17 @@
             background: #1f2937;
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 12px;
+            padding: 8px 14px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             margin: 0 4px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
         }
         .nav-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(99, 102, 241, 0.4);
         }
         .nav-btn.today {
             background: #10b981;
@@ -437,7 +437,7 @@
             margin-bottom: 16px;
         }
         .sidebar-title h3 {
-            font-size: 16px;
+            font-size: 20px;
             color: #1f2937;
             text-transform: none;
             letter-spacing: 0;
@@ -638,6 +638,19 @@
         </div>
     </div>
 
+    <!-- Type Select Modal -->
+    <div class="modal" id="typeSelectModal">
+        <div class="modal-content" style="text-align:center;width:300px">
+            <h2>选择类型</h2>
+            <div style="display:flex;flex-direction:column;gap:12px;margin-top:24px">
+                <button class="btn btn-primary" style="width:100%;padding:14px" onclick="openModalFromTypeSelect()">新建日程</button>
+                <button class="btn btn-primary" style="width:100%;padding:14px" onclick="openTodoModalFromTypeSelect()">新建待办</button>
+                <button class="btn btn-primary" style="width:100%;padding:14px" onclick="openNoteModalFromTypeSelect()">新建记事</button>
+            </div>
+            <button class="btn btn-secondary" style="margin-top:16px;width:100%;padding:14px" onclick="closeTypeSelectModal()">取消</button>
+        </div>
+    </div>
+
     <!-- Note Modal -->
     <div class="modal" id="noteModal">
         <div class="modal-content">
@@ -685,6 +698,7 @@
         let editingTodoId = null;
         let editingNoteId = null;
         let ws = null;
+        let currentSelectedDate = null;
 
         // WebSocket connection
         function connectWebSocket() {
@@ -833,14 +847,19 @@
         }
 
         // Todo modal functions
-        function openTodoModal() {
+        function openTodoModal(dateStr = null) {
             editingTodoId = null;
             document.getElementById('todoModalTitle').textContent = '新建待办';
             document.getElementById('deleteTodoBtn').style.display = 'none';
             document.getElementById('todoTitle').value = '';
-            document.getElementById('todoDueType').value = 'today';
+            if (dateStr) {
+                document.getElementById('todoDueType').value = 'custom';
+                document.getElementById('todoDueDate').value = dateStr;
+            } else {
+                document.getElementById('todoDueType').value = 'today';
+                document.getElementById('todoDueDate').value = '';
+            }
             toggleTodoDueDate();
-            document.getElementById('todoDueDate').value = '';
             document.getElementById('todoPriority').value = 'medium';
             document.getElementById('todoModal').classList.add('active');
         }
@@ -964,14 +983,14 @@
         }
 
         // Note modal functions
-        function openNoteModal() {
+        function openNoteModal(dateStr = null) {
             editingNoteId = null;
             document.getElementById('noteModalTitle').textContent = '新建记事';
             document.getElementById('deleteNoteBtn').style.display = 'none';
             document.getElementById('noteTitle').value = '';
             document.getElementById('noteContent').value = '';
             renderNoteColorPicker();
-            document.getElementById('noteDate').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('noteDate').value = dateStr || new Date().toISOString().slice(0, 10);
             document.getElementById('noteImage').value = '';
             document.getElementById('noteImagePreview').innerHTML = '';
             pastedImages = [];
@@ -1220,7 +1239,7 @@
                 }).join('');
 
                 daysGrid.innerHTML += `
-                    <div class="day${isToday ? ' today' : ''}" onclick="openModal('${dateStr}')">
+                    <div class="day${isToday ? ' today' : ''}" onclick="openTypeSelectModal('${dateStr}')">
                         <div class="day-num">${day}</div>
                         ${eventsHtml}
                         ${notesHtml}
@@ -1266,6 +1285,31 @@
         function goToday() {
             currentDate = new Date();
             renderCalendar();
+        }
+
+        // Type select modal functions
+        function openTypeSelectModal(dateStr) {
+            currentSelectedDate = dateStr;
+            document.getElementById('typeSelectModal').classList.add('active');
+        }
+
+        function closeTypeSelectModal() {
+            document.getElementById('typeSelectModal').classList.remove('active');
+        }
+
+        function openModalFromTypeSelect() {
+            closeTypeSelectModal();
+            openModal(currentSelectedDate);
+        }
+
+        function openTodoModalFromTypeSelect() {
+            closeTypeSelectModal();
+            openTodoModal(currentSelectedDate);
+        }
+
+        function openNoteModalFromTypeSelect() {
+            closeTypeSelectModal();
+            openNoteModal(currentSelectedDate);
         }
 
         function openModal(dateStr = null) {
