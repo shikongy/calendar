@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sleep 2:*)",
+      "Bash(node:*)",
+      "Bash(sleep 3:*)",
+      "Bash(cd:*)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(tasklist:*)",
+      "Bash(echo === PID $pid ===:*)",
+      "Bash(cmd:*)",
+      "Bash(head:*)",
+      "Bash(cd /d/project/日历-web && git push -u origin master 2>&1)"
+    ]
+  }
+}

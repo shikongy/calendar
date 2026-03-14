@@ -47,54 +47,26 @@
   ],
   "todos": [
     {
-      "id": "1773487450245",
-      "title": "测试待办",
+      "id": "1773490121641",
+      "title": "工作待办：测试环境数据库分析",
       "completed": false,
-      "dueDate": "2026-03-20",
-      "priority": "high",
-      "createdAt": "2026-03-14T11:24:10.245Z",
-      "updatedAt": "2026-03-14T11:24:10.245Z"
-    },
-    {
-      "id": "1773487740376",
-      "title": "测试待办2",
-      "completed": false,
-      "dueDate": "2026-03-25",
-      "priority": "high",
-      "createdAt": "2026-03-14T11:29:00.376Z",
-      "updatedAt": "2026-03-14T11:29:00.376Z"
+      "dueDate": "2026-03-22",
+      "priority": "medium",
+      "createdAt": "2026-03-14T12:08:41.641Z",
+      "updatedAt": "2026-03-14T12:12:27.100Z",
+      "dueType": "custom"
     }
   ],
   "notes": [
     {
-      "id": "1773487445369",
-      "title": "测试记事",
-      "content": "这是测试内容",
+      "id": "1773489551673",
+      "title": "开发进度",
+      "content": "完成了日历 待办事项 记事本 程序的开发",
       "color": "#1890ff",
       "date": "2026-03-14",
       "image": null,
-      "createdAt": "2026-03-14T11:24:05.369Z",
-      "updatedAt": "2026-03-14T11:24:05.369Z"
-    },
-    {
-      "id": "1773487697961",
-      "title": "测试记事2",
-      "content": "测试内容2",
-      "color": "#1890ff",
-      "date": "2026-03-14",
-      "image": null,
-      "createdAt": "2026-03-14T11:28:17.961Z",
-      "updatedAt": "2026-03-14T11:28:17.961Z"
-    },
-    {
-      "id": "1773487731282",
-      "title": "测试记事3",
-      "content": "内容3",
-      "color": "#1890ff",
-      "date": "2026-03-14",
-      "image": null,
-      "createdAt": "2026-03-14T11:28:51.282Z",
-      "updatedAt": "2026-03-14T11:28:51.282Z"
+      "createdAt": "2026-03-14T11:59:11.673Z",
+      "updatedAt": "2026-03-14T11:59:11.673Z"
     }
   ]
 }

@@ -74,13 +74,14 @@
         .weekdays {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            background: #1f2937;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
         }
         .weekday {
             padding: 18px;
             text-align: center;
             font-weight: 600;
-            color: white;
+            color: #1f2937;
             font-size: 14px;
             letter-spacing: 1px;
         }
@@ -436,15 +437,15 @@
             margin-bottom: 16px;
         }
         .sidebar-title h3 {
-            font-size: 13px;
-            color: #1890ff;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            font-size: 16px;
+            color: #1f2937;
+            text-transform: none;
+            letter-spacing: 0;
             font-weight: 700;
             margin: 0;
         }
         .add-btn {
-            background: #1890ff;
+            background: #1f2937;
             color: white;
             border: none;
             width: 24px;
@@ -459,7 +460,7 @@
             transition: all 0.2s ease;
         }
         .add-btn:hover {
-            background: #1890ff;
+            background: #1f2937;
             transform: scale(1.1);
         }
         .empty-text {
@@ -516,7 +517,7 @@
                 </div>
                 <div class="sidebar-card">
                     <div class="sidebar-title">
-                        <h3>代办事项</h3>
+                        <h3>待办事项</h3>
                         <button class="add-btn" onclick="openTodoModal()">+</button>
                     </div>
                     <div id="todoList"></div>
@@ -604,7 +605,7 @@
     <!-- Todo Modal -->
     <div class="modal" id="todoModal">
         <div class="modal-content">
-            <h2 id="todoModalTitle">新建代办</h2>
+            <h2 id="todoModalTitle">新建待办</h2>
             <div class="form-group">
                 <label>标题</label>
                 <input type="text" id="todoTitle" placeholder="输入标题">
@@ -789,7 +790,7 @@
         function renderTodos() {
             const list = document.getElementById('todoList');
             if (todos.length === 0) {
-                list.innerHTML = '<div class="empty-text">暂无代办</div>';
+                list.innerHTML = '<div class="empty-text">暂无待办</div>';
                 return;
             }
             // Sort: uncompleted first, then by priority
@@ -834,7 +835,7 @@
         // Todo modal functions
         function openTodoModal() {
             editingTodoId = null;
-            document.getElementById('todoModalTitle').textContent = '新建代办';
+            document.getElementById('todoModalTitle').textContent = '新建待办';
             document.getElementById('deleteTodoBtn').style.display = 'none';
             document.getElementById('todoTitle').value = '';
             document.getElementById('todoDueType').value = 'today';
@@ -850,7 +851,7 @@
             if (!todo) return;
 
             editingTodoId = id;
-            document.getElementById('todoModalTitle').textContent = '编辑代办';
+            document.getElementById('todoModalTitle').textContent = '编辑待办';
             document.getElementById('deleteTodoBtn').style.display = 'block';
             document.getElementById('todoTitle').value = todo.title;
 
@@ -887,9 +888,10 @@
                 case 'today':
                     return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 case 'week': {
-                    const firstDayOfWeek = new Date(now);
-                    firstDayOfWeek.setDate(day - now.getDay());
-                    return `${firstDayOfWeek.getFullYear()}-${String(firstDayOfWeek.getMonth() + 1).padStart(2, '0')}-${String(firstDayOfWeek.getDate()).padStart(2, '0')}`;
+                    // 计算本周最后一天（周日）
+                    const lastDayOfWeek = new Date(now);
+                    lastDayOfWeek.setDate(day + (7 - now.getDay()));
+                    return `${lastDayOfWeek.getFullYear()}-${String(lastDayOfWeek.getMonth() + 1).padStart(2, '0')}-${String(lastDayOfWeek.getDate()).padStart(2, '0')}`;
                 }
                 case 'month':
                     return `${year}-${String(month + 1).padStart(2, '0')}-01`;
@@ -951,7 +953,7 @@
 
         async function deleteTodo() {
             if (!editingTodoId) return;
-            if (!confirm('确定删除这个代办？')) return;
+            if (!confirm('确定删除这个待办？')) return;
             try {
                 await fetch(API + '/todos/' + editingTodoId, { method: 'DELETE' });
                 await loadTodos();
@@ -1182,11 +1184,11 @@
                     if (t.dueType === 'today') {
                         return t.dueDate === dateStr;
                     } else if (t.dueType === 'week') {
-                        // Show for the entire week
+                        // Show for the entire week (Monday to Sunday)
                         const todoDate = new Date(t.dueDate);
                         const currentDate = new Date(dateStr);
                         const weekStart = new Date(currentDate);
-                        weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+                        weekStart.setDate(currentDate.getDate() - ((currentDate.getDay() + 6) % 7));
                         const weekEnd = new Date(weekStart);
                         weekEnd.setDate(weekStart.getDate() + 6);
                         return todoDate >= weekStart && todoDate <= weekEnd;
