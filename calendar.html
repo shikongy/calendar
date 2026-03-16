@@ -20,21 +20,87 @@
             padding: 20px;
         }
         .container { max-width: 1800px; margin: 0 auto; }
-        .main-layout { display: flex; gap: 20px; }
-        .main-layout .left-sidebar { flex: 0 0 280px; display: flex; flex-direction: column; gap: 20px; }
-        .main-layout .right-sidebar { flex: 0 0 280px; }
-        .main-layout .sidebar-card { margin-bottom: 0; }
-        .main-layout .calendar-wrapper { flex: 1; }
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 80px);
+            min-height: 600px;
+        }
+        .main-layout .left-sidebar {
+            flex: 0 0 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            height: 100%;
+            overflow: hidden;
+        }
+        .main-layout .right-sidebar {
+            flex: 0 0 280px;
+            height: 100%;
+            overflow: hidden;
+        }
+        .main-layout .sidebar-card {
+            margin-bottom: 0;
+            display: flex;
+            flex-direction: column;
+            height: calc(50% - 8px);
+            overflow: hidden;
+        }
+        .main-layout .sidebar-card:last-child {
+            margin-bottom: 0;
+        }
+        /* 右侧边栏的卡片占满整个高度 */
+        .main-layout .right-sidebar .sidebar-card {
+            height: 100%;
+        }
+        .main-layout .calendar-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .main-layout .calendar {
+            flex: 1;
+            overflow: auto;
+        }
+        .main-layout #upcomingList,
+        .main-layout #todoList,
+        .main-layout #noteList {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        /* 自定义滚动条 */
+        .main-layout #upcomingList::-webkit-scrollbar,
+        .main-layout #todoList::-webkit-scrollbar,
+        .main-layout #noteList::-webkit-scrollbar,
+        .main-layout .calendar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .main-layout #upcomingList::-webkit-scrollbar-thumb,
+        .main-layout #todoList::-webkit-scrollbar-thumb,
+        .main-layout #noteList::-webkit-scrollbar-thumb,
+        .main-layout .calendar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .main-layout #upcomingList::-webkit-scrollbar-thumb:hover,
+        .main-layout #todoList::-webkit-scrollbar-thumb:hover,
+        .main-layout #noteList::-webkit-scrollbar-thumb:hover,
+        .main-layout .calendar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(10px);
-            padding: 24px 32px;
-            border-radius: 20px;
+            padding: 16px 24px;
+            border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.1);
+            flex-shrink: 0;
         }
         .header h1 {
             font-size: 20px;
@@ -85,15 +151,18 @@
             font-size: 14px;
             letter-spacing: 1px;
         }
-        .days { display: grid; grid-template-columns: repeat(7, 1fr); }
+        .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0; }
         .day {
-            min-height: 110px;
-            padding: 10px;
+            min-height: 80px;
+            padding: 8px;
             border-right: 1px solid #f0f0f0;
             border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
             transition: all 0.2s ease;
             background: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         .day:hover {
             background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
@@ -130,24 +199,87 @@
             font-size: 15px;
             font-weight: 600;
             color: #334155;
-            margin-bottom: 2px;
+            flex-shrink: 0;
         }
         .lunar-date {
             font-size: 10px;
             color: #9ca3af;
+            flex-shrink: 0;
+        }
+        .day-header {
+            flex-shrink: 0;
             margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .day-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .day-count-btn {
+            background: rgba(24, 144, 255, 0.1);
+            color: #1890ff;
+            border: none;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            flex-shrink: 0;
+            min-width: 24px;
+            text-align: center;
+        }
+        .day-count-btn:hover {
+            background: rgba(24, 144, 255, 0.2);
+        }
+        .day-detail-section {
+            margin-bottom: 8px;
+        }
+        .day-detail-item {
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .day-detail-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .day-detail-item-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: #1e293b;
+        }
+        .day-detail-item-time {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        .day-detail-item-desc {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 4px;
+            white-space: pre-wrap;
         }
         .event {
             font-size: 11px;
             padding: 4px 8px;
             border-radius: 8px;
             margin-top: 4px;
-            white-space: nowrap;
+            white-space: pre-wrap;
+            word-break: break-all;
             overflow: hidden;
-            text-overflow: ellipsis;
             cursor: pointer;
             font-weight: 500;
             transition: all 0.2s ease;
+            line-height: 1.3;
         }
         .event:hover {
             transform: scale(1.05);
@@ -158,12 +290,13 @@
             padding: 4px 8px;
             border-radius: 8px;
             margin-top: 4px;
-            white-space: nowrap;
+            white-space: pre-wrap;
+            word-break: break-all;
             overflow: hidden;
-            text-overflow: ellipsis;
             cursor: pointer;
             font-weight: 500;
             transition: all 0.2s ease;
+            line-height: 1.3;
         }
         .note-event:hover {
             transform: scale(1.05);
@@ -174,12 +307,13 @@
             padding: 4px 8px;
             border-radius: 8px;
             margin-top: 4px;
-            white-space: nowrap;
+            white-space: pre-wrap;
+            word-break: break-all;
             overflow: hidden;
-            text-overflow: ellipsis;
             cursor: pointer;
             font-weight: 500;
             transition: all 0.2s ease;
+            line-height: 1.3;
         }
         .todo-event:hover {
             transform: scale(1.05);
@@ -222,6 +356,81 @@
             font-size: 22px;
             color: #1e293b;
             font-weight: 700;
+        }
+        .note-detail-modal {
+            max-width: 700px !important;
+            width: 90% !important;
+            padding: 40px !important;
+        }
+        .note-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
+        .note-detail-header h2 {
+            margin: 0 !important;
+            font-size: 28px !important;
+            color: #1e293b !important;
+            font-weight: 700 !important;
+        }
+        .note-detail-header .close-btn {
+            background: none !important;
+            border: none !important;
+            font-size: 32px !important;
+            cursor: pointer !important;
+            color: #94a3b8 !important;
+            line-height: 1 !important;
+            padding: 0 !important;
+        }
+        .note-detail-header .close-btn:hover {
+            color: #ef4444 !important;
+        }
+        .note-detail-meta {
+            margin: 16px 0 !important;
+            color: #64748b !important;
+            font-size: 14px !important;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .note-detail-content {
+            margin: 24px 0 !important;
+            line-height: 2 !important;
+            font-size: 17px !important;
+            white-space: pre-wrap !important;
+            word-break: break-word !important;
+            color: #334155 !important;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+        .note-detail-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            margin-top: 24px !important;
+        }
+        .note-detail-images img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .note-detail-images img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        .note-detail-footer {
+            margin-top: 32px !important;
+            text-align: right !important;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
         }
         .form-group { margin-bottom: 20px; }
         .form-group label {
@@ -414,12 +623,38 @@
             padding: 14px;
             border-radius: 12px;
             margin-bottom: 10px;
-            cursor: pointer;
             transition: all 0.3s ease;
         }
         .note-card:hover {
             transform: translateX(4px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .note-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .note-card-actions {
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .note-card:hover .note-card-actions {
+            opacity: 1;
+        }
+        .note-action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .note-action-btn:hover {
+            background: rgba(0,0,0,0.1);
         }
         .note-date {
             font-size: 12px;
@@ -444,7 +679,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
+            flex-shrink: 0;
         }
         .sidebar-title h3 {
             font-size: 20px;
@@ -479,6 +715,20 @@
             text-align: center;
             padding: 20px;
         }
+        .show-more-btn {
+            display: block;
+            text-align: center;
+            padding: 10px;
+            color: #1890ff;
+            cursor: pointer;
+            font-size: 14px;
+            border-top: 1px solid #f0f0f0;
+            margin-top: 8px;
+        }
+        .show-more-btn:hover {
+            color: #40a9ff;
+            background: #fafafa;
+        }
         .note-image {
             width: 100%;
             max-height: 200px;
@@ -493,6 +743,11 @@
             border-radius: 8px;
             margin-right: 8px;
             cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .note-image-preview:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         .note-modal-image-container {
             position: relative;
@@ -537,6 +792,44 @@
             margin-top: 8px;
             cursor: pointer;
         }
+        .note-images-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            margin-top: 8px;
+        }
+        .note-images-grid img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .note-images-more {
+            position: relative;
+            cursor: pointer;
+        }
+        .note-images-more img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        .note-images-more-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
         .note-image-container {
             position: relative;
             display: inline-block;
@@ -580,10 +873,37 @@
         }
         .image-modal img {
             max-width: 90%;
-            max-height: 90%;
+            max-height: 85vh;
             object-fit: contain;
             border-radius: 4px;
         }
+        .image-modal-counter {
+            position: absolute;
+            bottom: 30px;
+            color: white;
+            font-size: 16px;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+        .image-modal-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            font-size: 30px;
+            padding: 20px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .image-modal-nav:hover {
+            background: rgba(255,255,255,0.4);
+        }
+        .image-modal-prev { left: 20px; }
+        .image-modal-next { right: 20px; }
     </style>
 </head>
 <body>
@@ -700,7 +1020,7 @@
                     <option value="month">本月</option>
                     <option value="custom">自定义</option>
                 </select>
-                <input type="date" id="todoDueDate" style="margin-top:8px;display:none">
+                <input type="datetime-local" id="todoDueDate" style="margin-top:8px;display:none">
             </div>
             <div class="form-group">
                 <label>优先级</label>
@@ -756,8 +1076,8 @@
             </div>
             <div class="form-group">
                 <label>图片</label>
-                <input type="file" id="noteImage" accept="image/*" onchange="previewNoteImage(this)">
-                <div id="noteImagePreview" style="margin-top:10px;"></div>
+                <input type="file" id="noteImage" accept="image/*" multiple onchange="previewNoteImage(this)">
+                <div id="noteImagePreview" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;"></div>
             </div>
             <div class="modal-btns">
                 <button class="btn btn-danger" id="deleteNoteBtn" style="display:none" onclick="deleteNote()">删除</button>
@@ -765,6 +1085,44 @@
                     <button class="btn btn-secondary" onclick="closeNoteModal()">取消</button>
                     <button class="btn btn-primary" onclick="saveNote()">保存</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Note Detail Modal -->
+    <div class="modal" id="noteDetailModal">
+        <div class="modal-content note-detail-modal">
+            <div class="note-detail-header">
+                <h2 id="noteDetailTitle"></h2>
+                <button class="close-btn" onclick="closeNoteDetailModal()">&times;</button>
+            </div>
+            <div class="note-detail-meta" id="noteDetailMeta"></div>
+            <div class="note-detail-content" id="noteDetailContent"></div>
+            <div class="note-detail-images" id="noteDetailImages"></div>
+            <div class="note-detail-footer">
+                <button class="btn btn-primary" onclick="editFromDetail()">编辑</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Day Detail Modal -->
+    <div class="modal" id="dayDetailModal">
+        <div class="modal-content note-detail-modal">
+            <div class="note-detail-header">
+                <h2 id="dayDetailTitle"></h2>
+                <button class="close-btn" onclick="closeDayDetailModal()">&times;</button>
+            </div>
+            <div class="day-detail-section">
+                <h3 style="color:#1890ff;margin:16px 0 12px;font-size:16px">日程</h3>
+                <div id="dayDetailEvents"></div>
+            </div>
+            <div class="day-detail-section">
+                <h3 style="color:#52c41a;margin:16px 0 12px;font-size:16px">待办</h3>
+                <div id="dayDetailTodos"></div>
+            </div>
+            <div class="day-detail-section">
+                <h3 style="color:#faad14;margin:16px 0 12px;font-size:16px">记事</h3>
+                <div id="dayDetailNotes"></div>
             </div>
         </div>
     </div>
@@ -1108,7 +1466,11 @@
                         showNotification(data.todo, data.message);
                     } else if (data.type === 'todo-updated') {
                         loadEvents();
+                        renderTodos();
                     } else if (data.type === 'note-updated') {
+                        loadEvents();
+                        renderNotes();
+                    } else if (data.type === 'event-updated') {
                         loadEvents();
                     }
                 } catch (e) {
@@ -1192,21 +1554,35 @@
             }
         }
 
+        let todosExpanded = false;
+
         function renderTodos() {
             const list = document.getElementById('todoList');
             if (todos.length === 0) {
                 list.innerHTML = '<div class="empty-text">暂无待办</div>';
                 return;
             }
-            // Sort: uncompleted first, then by priority
+            // Sort: uncompleted first, then by due date (nearest first)
             const sorted = [...todos].sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
-                const priorityOrder = { high: 0, medium: 1, low: 2 };
-                return priorityOrder[a.priority] - priorityOrder[b.priority];
+                // For uncompleted todos, sort by due date (nearest first)
+                const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+                const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+                return aDate - bDate;
             });
-            list.innerHTML = sorted.map(t => {
-                const dueTypeText = { today: '今日', week: '本周', month: '本月', custom: t.dueDate };
-                const dueText = t.dueType && t.dueType !== 'custom' ? dueTypeText[t.dueType] : (t.dueDate || '');
+
+            const displayCount = 3;
+            const displayTodos = todosExpanded ? sorted : sorted.slice(0, displayCount);
+
+            list.innerHTML = displayTodos.map(t => {
+                let dueText = '';
+                if (t.dueType && t.dueType !== 'custom') {
+                    dueText = { today: '今日', week: '本周', month: '本月' }[t.dueType] || '';
+                } else if (t.dueDate) {
+                    // Format datetime to friendly display
+                    const dt = new Date(t.dueDate);
+                    dueText = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+                }
                 return `
                 <div class="todo-item${t.completed ? ' completed' : ''}" onclick="editTodo('${t.id}', event)">
                     <input type="checkbox" class="todo-checkbox" ${t.completed ? 'checked' : ''}
@@ -1219,7 +1595,15 @@
                         </div>
                     </div>
                 </div>
-            `}).join('');
+            `}).join('') + (sorted.length > displayCount ? `
+                <div class="show-more-btn" onclick="toggleTodos(event)">${todosExpanded ? '收起' : '更多 (' + sorted.length + ')'}</div>
+            ` : '');
+        }
+
+        function toggleTodos(event) {
+            if (event) event.stopPropagation();
+            todosExpanded = !todosExpanded;
+            renderTodos();
         }
 
         // Delete note image
@@ -1242,19 +1626,73 @@
         }
 
         // Preview image in full size
+        let currentImageList = [];
+        let currentImageIndex = 0;
+
         function previewImage(imageUrl, event) {
-            event.stopPropagation();
+            if (event) event.stopPropagation();
             const modal = document.getElementById('imageModal');
             const img = document.getElementById('previewImage');
-            img.src = imageUrl;
+
+            // Check if it's a comma-separated list of images
+            if (imageUrl.includes(',')) {
+                currentImageList = imageUrl.split(',');
+                currentImageIndex = 0;
+            } else {
+                currentImageList = [imageUrl];
+                currentImageIndex = 0;
+            }
+
+            img.src = currentImageList[currentImageIndex];
             modal.classList.add('active');
+            updateImageCounter();
         }
+
+        function navigateImage(direction, event) {
+            if (event) event.stopPropagation();
+            const newIndex = currentImageIndex + direction;
+            if (newIndex >= 0 && newIndex < currentImageList.length) {
+                currentImageIndex = newIndex;
+                document.getElementById('previewImage').src = currentImageList[currentImageIndex];
+                updateImageCounter();
+            }
+        }
+
+        function updateImageCounter() {
+            const counter = document.getElementById('imageModalCounter');
+            if (currentImageList.length > 1) {
+                counter.textContent = `${currentImageIndex + 1} / ${currentImageList.length}`;
+                counter.style.display = 'block';
+            } else {
+                counter.style.display = 'none';
+            }
+        }
+
+        // Add keyboard navigation for image preview
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('imageModal');
+            if (!modal.classList.contains('active')) return;
+
+            if (e.key === 'ArrowLeft' && currentImageIndex > 0) {
+                currentImageIndex--;
+                document.getElementById('previewImage').src = currentImageList[currentImageIndex];
+            } else if (e.key === 'ArrowRight' && currentImageIndex < currentImageList.length - 1) {
+                currentImageIndex++;
+                document.getElementById('previewImage').src = currentImageList[currentImageIndex];
+            } else if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
 
         // Close image modal
         function closeImageModal() {
             const modal = document.getElementById('imageModal');
             modal.classList.remove('active');
+            currentImageList = [];
+            currentImageIndex = 0;
         }
+
+        let notesExpanded = false;
 
         function renderNotes() {
             const list = document.getElementById('noteList');
@@ -1268,18 +1706,195 @@
                 const dateB = b.date || b.createdAt || '';
                 return dateB.localeCompare(dateA);
             });
-            list.innerHTML = sortedNotes.map(n => {
+
+            const displayCount = 3;
+            const displayNotes = notesExpanded ? sortedNotes : sortedNotes.slice(0, displayCount);
+
+            list.innerHTML = displayNotes.map(n => {
                 const noteDateTime = n.date || n.createdAt || '';
                 const [noteDate, noteTime] = noteDateTime.split(' ');
                 const displayTime = noteTime ? `${noteDate} ${noteTime}` : noteDate;
+                // Handle multiple images (comma-separated, max 20)
+                let imageHtml = '';
+                if (n.image) {
+                    const images = n.image.split(',').slice(0, 20);
+                    if (images.length === 1) {
+                        imageHtml = `<img src="${images[0]}" class="note-card-image" onclick="previewImage('${n.image}', event)">`;
+                    } else if (images.length === 2) {
+                        imageHtml = `<div class="note-images-grid">${images.map(img => `<img src="${img}" onclick="previewImage('${n.image}', event)">`).join('')}</div>`;
+                    } else {
+                        imageHtml = `<div class="note-images-grid">
+                            ${images.slice(0, 2).map(img => `<img src="${img}" onclick="previewImage('${n.image}', event)">`).join('')}
+                            <div class="note-images-more" onclick="previewImage('${n.image}', event)">
+                                <img src="${images[2]}">
+                                <div class="note-images-more-overlay">+${images.length - 2}</div>
+                            </div>
+                        </div>`;
+                    }
+                }
                 return `
-                <div class="note-card" style="background:${n.color}15;border-left:4px solid ${n.color}" onclick="editNote('${n.id}', event)">
-                    <div class="note-date" style="font-size:12px;color:#999;margin-bottom:4px;">${displayTime}</div>
+                <div class="note-card" style="background:${n.color}15;border-left:4px solid ${n.color}">
+                    <div class="note-card-header">
+                        <div class="note-date" style="font-size:12px;color:#999;">${displayTime}</div>
+                        <div class="note-card-actions">
+                            <button class="note-action-btn" onclick="viewNoteDetail('${n.id}', event)" title="详情">👁</button>
+                            <button class="note-action-btn" onclick="editNote('${n.id}', event)" title="编辑">✏️</button>
+                        </div>
+                    </div>
                     <div class="note-title">${n.title}</div>
                     <div class="note-preview">${n.content || '无内容'}</div>
-                    ${n.image ? `<img src="${n.image}" class="note-card-image" onclick="previewImage('${n.image}', event)">` : ''}
+                    ${imageHtml}
                 </div>
-            `}).join('');
+            `}).join('') + (sortedNotes.length > displayCount ? `
+                <div class="show-more-btn" onclick="toggleNotes(event)">${notesExpanded ? '收起' : '更多 (' + sortedNotes.length + ')'}</div>
+            ` : '');
+        }
+
+        function toggleNotes(event) {
+            if (event) event.stopPropagation();
+            notesExpanded = !notesExpanded;
+            renderNotes();
+        }
+
+        // Note detail functions
+        let detailNoteId = null;
+
+        function viewNoteDetail(id, event) {
+            if (event) event.stopPropagation();
+            const note = notes.find(n => n.id === id);
+            if (!note) return;
+
+            detailNoteId = id;
+            document.getElementById('noteDetailTitle').textContent = note.title;
+
+            // Format date and time
+            const noteDateTime = note.date || note.createdAt || '';
+            const [noteDate, noteTime] = noteDateTime.split(' ');
+            const colorName = { '#1890ff': '蓝色', '#52c41a': '绿色', '#faad14': '黄色', '#f5222d': '红色', '#722ed1': '紫色', '#13c2c2': '青色', '#eb2f96': '粉色' }[note.color] || '蓝色';
+            const metaText = `📅 ${noteDate}${noteTime ? ' ' + noteTime : ''}    🎨 颜色: ${colorName}`;
+            document.getElementById('noteDetailMeta').textContent = metaText;
+
+            document.getElementById('noteDetailContent').textContent = note.content || '无内容';
+
+            // Render images
+            const imagesContainer = document.getElementById('noteDetailImages');
+            if (note.image) {
+                const images = note.image.split(',');
+                imagesContainer.innerHTML = images.map(img => `<img src="${img}" onclick="previewImage('${note.image}', event)">`).join('');
+            } else {
+                imagesContainer.innerHTML = '';
+            }
+
+            document.getElementById('noteDetailModal').classList.add('active');
+        }
+
+        function closeNoteDetailModal() {
+            document.getElementById('noteDetailModal').classList.remove('active');
+        }
+
+        function editFromDetail() {
+            closeNoteDetailModal();
+            if (detailNoteId) {
+                editNote(detailNoteId);
+            }
+        }
+
+        // Day detail functions
+        function showDayDetail(dateStr, event) {
+            if (event) event.stopPropagation();
+
+            const date = new Date(dateStr);
+            const dateTitle = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+            document.getElementById('dayDetailTitle').textContent = dateTitle;
+
+            // Filter events for this date
+            const dayEvents = events.filter(e => {
+                if (!e.start) return false;
+                const eventDate = e.start.split('T')[0];
+                return eventDate === dateStr;
+            });
+
+            // Filter todos for this date
+            const dayTodos = todos.filter(t => {
+                if (t.completed) return false;
+                if (t.dueType === 'today') {
+                    return t.dueDate && t.dueDate.startsWith(dateStr);
+                } else if (t.dueType === 'week') {
+                    const todoDate = new Date(t.dueDate);
+                    const weekStart = new Date(date);
+                    weekStart.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+                    const weekEnd = new Date(weekStart);
+                    weekEnd.setDate(weekStart.getDate() + 6);
+                    return todoDate >= weekStart && todoDate <= weekEnd;
+                } else if (t.dueType === 'month') {
+                    return t.dueDate && t.dueDate.startsWith(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
+                } else if (t.dueType === 'custom' || t.dueDate) {
+                    return t.dueDate && t.dueDate.startsWith(dateStr);
+                }
+                return false;
+            });
+
+            // Filter notes for this date
+            const dayNotes = notes.filter(n => {
+                if (!n.date) return false;
+                const noteDate = n.date.split(' ')[0];
+                return noteDate === dateStr;
+            });
+
+            // Render events
+            const eventsContainer = document.getElementById('dayDetailEvents');
+            if (dayEvents.length === 0) {
+                eventsContainer.innerHTML = '<div style="color:#999;font-size:14px">暂无日程</div>';
+            } else {
+                eventsContainer.innerHTML = dayEvents.map(e => `
+                    <div class="day-detail-item" style="border-left-color:${e.color};background:${e.color}10" onclick="editEvent('${e.id}', event)">
+                        <div class="day-detail-item-title">${e.title}</div>
+                        <div class="day-detail-item-time">${e.start ? new Date(e.start).toLocaleString('zh-CN', {hour:'2-digit', minute:'2-digit', hour12:false}) : ''} ${e.end ? '- ' + new Date(e.end).toLocaleString('zh-CN', {hour:'2-digit', minute:'2-digit', hour12:false}) : ''}</div>
+                        ${e.description ? `<div class="day-detail-item-desc">${e.description}</div>` : ''}
+                    </div>
+                `).join('');
+            }
+
+            // Render todos
+            const todosContainer = document.getElementById('dayDetailTodos');
+            if (dayTodos.length === 0) {
+                todosContainer.innerHTML = '<div style="color:#999;font-size:14px">暂无待办</div>';
+            } else {
+                todosContainer.innerHTML = dayTodos.map(t => {
+                    const priorityColor = t.priority === 'high' ? '#ef4444' : t.priority === 'medium' ? '#f59e0b' : '#10b981';
+                    let dueText = '';
+                    if (t.dueType && t.dueType !== 'custom') {
+                        dueText = { today: '今日', week: '本周', month: '本月' }[t.dueType] || '';
+                    } else if (t.dueDate) {
+                        const dt = new Date(t.dueDate);
+                        dueText = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+                    }
+                    return `
+                    <div class="day-detail-item" style="border-left-color:${priorityColor};background:${priorityColor}10" onclick="editTodo('${t.id}', event)">
+                        <div class="day-detail-item-title">${t.title}</div>
+                        <div class="day-detail-item-time">${dueText ? '截止: ' + dueText : ''}</div>
+                    </div>
+                `}).join('');
+            }
+
+            // Render notes
+            const notesContainer = document.getElementById('dayDetailNotes');
+            if (dayNotes.length === 0) {
+                notesContainer.innerHTML = '<div style="color:#999;font-size:14px">暂无记事</div>';
+            } else {
+                notesContainer.innerHTML = dayNotes.map(n => `
+                    <div class="day-detail-item" style="border-left-color:${n.color};background:${n.color}10" onclick="viewNoteDetail('${n.id}', event)">
+                        <div class="day-detail-item-title">${n.title}</div>
+                        <div class="day-detail-item-desc">${n.content || ''}</div>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('dayDetailModal').classList.add('active');
+        }
+
+        function closeDayDetailModal() {
+            document.getElementById('dayDetailModal').classList.remove('active');
         }
 
         // Todo modal functions
@@ -1290,7 +1905,10 @@
             document.getElementById('todoTitle').value = '';
             if (dateStr) {
                 document.getElementById('todoDueType').value = 'custom';
-                document.getElementById('todoDueDate').value = dateStr;
+                // Format for datetime-local input: YYYY-MM-DDTHH:mm
+                const now = new Date();
+                const dateTimeStr = dateStr + 'T' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+                document.getElementById('todoDueDate').value = dateTimeStr;
             } else {
                 document.getElementById('todoDueType').value = 'today';
                 document.getElementById('todoDueDate').value = '';
@@ -1338,18 +1956,21 @@
             const year = now.getFullYear();
             const month = now.getMonth();
             const day = now.getDate();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeStr = `T${hours}:${minutes}`;
 
             switch (type) {
                 case 'today':
-                    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}${timeStr}`;
                 case 'week': {
                     // 计算本周最后一天（周日）
                     const lastDayOfWeek = new Date(now);
                     lastDayOfWeek.setDate(day + (7 - now.getDay()));
-                    return `${lastDayOfWeek.getFullYear()}-${String(lastDayOfWeek.getMonth() + 1).padStart(2, '0')}-${String(lastDayOfWeek.getDate()).padStart(2, '0')}`;
+                    return `${lastDayOfWeek.getFullYear()}-${String(lastDayOfWeek.getMonth() + 1).padStart(2, '0')}-${String(lastDayOfWeek.getDate()).padStart(2, '0')}${timeStr}`;
                 }
                 case 'month':
-                    return `${year}-${String(month + 1).padStart(2, '0')}-01`;
+                    return `${year}-${String(month + 1).padStart(2, '0')}-01${timeStr}`;
                 default:
                     return null;
             }
@@ -1455,14 +2076,16 @@
 
             document.getElementById('noteImage').value = '';
 
-            // Show existing image with delete button and preview
+            // Show existing images with delete button and preview (max 20)
             const preview = document.getElementById('noteImagePreview');
             if (note.image) {
-                preview.innerHTML = `
+                const images = note.image.split(',').slice(0, 20);
+                preview.innerHTML = images.map(img => `
                     <div class="note-modal-image-container">
-                        <button class="note-modal-image-delete" onclick="removeNoteImage()">×</button>
-                        <img src="${note.image}" class="note-image-preview" onclick="previewImage('${note.image}', event)">
-                    </div>`;
+                        <button class="note-modal-image-delete" onclick="removeNoteImage('${img}', event)">×</button>
+                        <img src="${img}" class="note-image-preview" onclick="previewImage('${note.image}', event)">
+                    </div>`).join('');
+                preview.dataset.existingImages = note.image;
             } else {
                 preview.innerHTML = '';
             }
@@ -1472,16 +2095,34 @@
 
         function previewNoteImage(input) {
             const preview = document.getElementById('noteImagePreview');
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.innerHTML = `
-                        <div class="note-modal-image-container">
-                            <button class="note-modal-image-delete" onclick="clearNewNoteImage()">×</button>
-                            <img src="${e.target.result}" class="note-image-preview" onclick="previewImage('${e.target.result}', event)">
-                        </div>`;
-                };
-                reader.readAsDataURL(input.files[0]);
+            preview.innerHTML = '';
+            const files = input.files;
+            if (files && files.length > 0) {
+                const maxImages = 20;
+                const count = Math.min(files.length, maxImages);
+                for (let i = 0; i < count; i++) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.innerHTML += `
+                            <div class="note-modal-image-container">
+                                <button class="note-modal-image-delete" onclick="clearOneNoteImage(${i}, event)">×</button>
+                                <img src="${e.target.result}" class="note-image-preview" onclick="previewImage('${e.target.result}', event)">
+                            </div>`;
+                    };
+                    reader.readAsDataURL(files[i]);
+                }
+            }
+        }
+
+        let noteImageDataList = [];
+
+        function clearOneNoteImage(index, event) {
+            if (event) event.stopPropagation();
+            // Re-render remaining images
+            const preview = document.getElementById('noteImagePreview');
+            const containers = preview.querySelectorAll('.note-modal-image-container');
+            if (containers[index]) {
+                containers[index].remove();
             }
         }
 
@@ -1490,12 +2131,28 @@
             document.getElementById('noteImage').value = '';
         }
 
-        function removeNoteImage() {
-            if (confirm('确定删除图片？')) {
-                document.getElementById('noteImagePreview').innerHTML = '';
-                document.getElementById('noteImage').value = '';
-                // Mark for deletion in saveNote
-                document.getElementById('noteImagePreview').dataset.remove = 'true';
+        function clearNewNoteImage() {
+            document.getElementById('noteImagePreview').innerHTML = '';
+            document.getElementById('noteImage').value = '';
+        }
+
+        function removeNoteImage(imgToRemove, event) {
+            if (event) event.stopPropagation();
+            const preview = document.getElementById('noteImagePreview');
+            // Remove the image container that was clicked
+            if (event && event.target.parentElement) {
+                event.target.parentElement.remove();
+            }
+            // Update existingImages to mark this image for removal
+            if (preview.dataset.existingImages) {
+                const currentImages = preview.dataset.existingImages.split(',');
+                const remainingImages = currentImages.filter(img => img !== imgToRemove);
+                if (remainingImages.length === 0) {
+                    preview.dataset.remove = 'true';
+                    preview.dataset.existingImages = '';
+                } else {
+                    preview.dataset.existingImages = remainingImages.join(',');
+                }
             }
         }
 
@@ -1503,27 +2160,42 @@
 
         function handleNotePaste(e) {
             const items = e.clipboardData.items;
+            // Count existing images
+            const preview = document.getElementById('noteImagePreview');
+            const existingCount = preview.querySelectorAll('.note-modal-image-container').length;
+            const maxImages = 20;
+            let pastedCount = 0;
+
             for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
+                if (items[i].type.indexOf('image') !== -1 && pastedCount + existingCount < maxImages) {
                     const file = items[i].getAsFile();
                     const reader = new FileReader();
                     reader.onload = function(event) {
-                        const preview = document.getElementById('noteImagePreview');
                         const imgContainer = document.createElement('div');
+                        imgContainer.className = 'note-modal-image-container';
                         imgContainer.style.display = 'inline-block';
                         imgContainer.style.marginRight = '8px';
                         imgContainer.style.position = 'relative';
 
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'note-modal-image-delete';
+                        deleteBtn.innerHTML = '×';
+                        deleteBtn.onclick = function(evt) {
+                            evt.stopPropagation();
+                            const idx = pastedImages.findIndex(img => img.src === event.target.result);
+                            if (idx > -1) pastedImages.splice(idx, 1);
+                            imgContainer.remove();
+                        };
+
                         const img = document.createElement('img');
                         img.src = event.target.result;
                         img.className = 'note-image-preview';
-                        img.onclick = function() {
-                            if (confirm('确定删除图片？')) {
-                                imgContainer.remove();
-                                pastedImages = pastedImages.filter(imgData => imgData.src !== event.target.result);
-                            }
+                        img.onclick = function(evt) {
+                            evt.stopPropagation();
+                            previewImage(event.target.result, evt);
                         };
 
+                        imgContainer.appendChild(deleteBtn);
                         imgContainer.appendChild(img);
                         preview.appendChild(imgContainer);
 
@@ -1531,14 +2203,15 @@
                         pastedImages.push({
                             name: `screenshot_${Date.now()}.png`,
                             data: event.target.result.split(',')[1],
-                            type: 'image/png'
+                            type: 'image/png',
+                            src: event.target.result
                         });
+                        pastedCount++;
                     };
                     reader.readAsDataURL(file);
-                    e.preventDefault();
-                    break;
                 }
             }
+            if (pastedCount > 0) e.preventDefault();
         }
 
         function closeNoteModal() {
@@ -1574,8 +2247,13 @@
             formData.append('date', noteTime ? `${noteDate} ${noteTime}` : noteDate);
 
             const imageInput = document.getElementById('noteImage');
-            if (imageInput.files[0]) {
-                formData.append('image', imageInput.files[0]);
+            // Handle multiple file uploads (max 20)
+            const maxImages = 20;
+            if (imageInput.files.length > 0) {
+                const count = Math.min(imageInput.files.length, maxImages);
+                for (let i = 0; i < count; i++) {
+                    formData.append('image', imageInput.files[i]);
+                }
             }
 
             // Handle pasted images
@@ -1597,6 +2275,9 @@
             const preview = document.getElementById('noteImagePreview');
             if (preview.dataset.remove === 'true') {
                 formData.append('removeImage', 'true');
+            } else if (preview.dataset.existingImages) {
+                // User deleted some images but kept others
+                formData.append('remainingImages', preview.dataset.existingImages);
             }
 
             try {
@@ -1648,7 +2329,7 @@
             for (let i = startDay - 1; i >= 0; i--) {
                 const day = prevMonth.getDate() - i;
                 const prevMonthLunar = getLunarDate(prevMonth.getFullYear(), prevMonth.getMonth(), day);
-                daysGrid.innerHTML += `<div class="day other-month"><div class="day-num">${day}</div>${prevMonthLunar ? `<div class="lunar-date">${prevMonthLunar}</div>` : ''}</div>`;
+                daysGrid.innerHTML += `<div class="day other-month"><div class="day-header"><div class="day-num">${day}</div>${prevMonthLunar ? `<div class="lunar-date">${prevMonthLunar}</div>` : ''}</div></div>`;
             }
 
             for (let day = 1; day <= daysInMonth; day++) {
@@ -1663,7 +2344,7 @@
                 const dayTodos = todos.filter(t => {
                     if (t.completed) return false;
                     if (t.dueType === 'today') {
-                        return t.dueDate === dateStr;
+                        return t.dueDate && t.dueDate.startsWith(dateStr);
                     } else if (t.dueType === 'week') {
                         // Show for the entire week (Monday to Sunday)
                         const todoDate = new Date(t.dueDate);
@@ -1677,38 +2358,59 @@
                         // Show for the entire month
                         return t.dueDate && t.dueDate.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`);
                     } else if (t.dueType === 'custom' || t.dueDate) {
-                        return t.dueDate === dateStr;
+                        return t.dueDate && t.dueDate.startsWith(dateStr);
                     }
                     return false;
                 });
 
                 const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
 
-                let eventsHtml = dayEvents.map(e => `
-                    <div class="event" style="background:${e.color}20;color:${e.color};border-left:3px solid ${e.color}"
-                        onclick="editEvent('${e.id}', event)">${e.title}</div>
-                `).join('');
+                // 最多显示3条内容
+                const maxDisplay = 3;
+                const allItems = [...dayEvents, ...dayNotes, ...dayTodos];
+                const totalCount = allItems.length;
+                const displayItems = allItems.slice(0, maxDisplay);
 
-                let notesHtml = dayNotes.map(n => `
-                    <div class="note-event" style="background:${n.color}10;color:${n.color};border:1px dashed ${n.color}"
-                        onclick="editNote('${n.id}', event)">📝 ${n.title}</div>
-                `).join('');
+                // 用 start 字段区分事件，用 content 或 date 区分记事，用 dueType/dueDate 区分待办
+                let eventsHtml = displayItems.filter(item => item.start).map(e => {
+                    const eventColor = e.color || '#1890ff';
+                    return `<div class="event" style="background:${eventColor}20;color:${eventColor};border-left:3px solid ${eventColor}"
+                        onclick="editEvent('${e.id}', event)">📅 ${e.title}</div>`;
+                }).join('');
 
-                let todosHtml = dayTodos.map(t => {
+                let notesHtml = displayItems.filter(item => !item.start && (item.content !== undefined || item.date) && !item.dueType).map(n => {
+                    const noteColor = n.color || '#1890ff';
+                    return `<div class="note-event" style="background:${noteColor}10;color:${noteColor};border:1px dashed ${noteColor}"
+                        onclick="editNote('${n.id}', event)">📝 ${n.title}</div>`;
+                }).join('');
+
+                let todosHtml = displayItems.filter(item => item.dueType !== undefined || item.dueDate).map(t => {
                     const priorityColor = t.priority === 'high' ? '#ef4444' : t.priority === 'medium' ? '#f59e0b' : '#10b981';
+                    let timeStr = '';
+                    if (t.dueDate && t.dueDate.includes('T')) {
+                        const time = t.dueDate.split('T')[1];
+                        if (time) timeStr = ' ' + time.substring(0, 5);
+                    }
                     return `<div class="todo-event" style="background:${priorityColor}10;color:${priorityColor};border-left:3px solid ${priorityColor}"
-                        onclick="editTodo('${t.id}', event)">☑ ${t.title}</div>`;
+                        onclick="editTodo('${t.id}', event)">☑ ${t.title}${timeStr}</div>`;
                 }).join('');
 
                 const lunarDate = getLunarDate(year, month, day);
 
                 daysGrid.innerHTML += `
                     <div class="day${isToday ? ' today' : ''}" onclick="openTypeSelectModal('${dateStr}')">
-                        <div class="day-num">${day}</div>
-                        ${lunarDate ? `<div class="lunar-date">${lunarDate}</div>` : ''}
-                        ${eventsHtml}
-                        ${notesHtml}
-                        ${todosHtml}
+                        <div class="day-header">
+                            <div>
+                                <div class="day-num">${day}</div>
+                                ${lunarDate ? `<div class="lunar-date">${lunarDate}</div>` : ''}
+                            </div>
+                            ${totalCount > 0 ? `<button class="day-count-btn" onclick="showDayDetail('${dateStr}', event)">${totalCount}</button>` : ''}
+                        </div>
+                        <div class="day-content">
+                            ${eventsHtml}
+                            ${notesHtml}
+                            ${todosHtml}
+                        </div>
                     </div>`;
             }
 
@@ -1716,22 +2418,26 @@
             const nextMonth = new Date(year, month + 1, 1);
             for (let i = 1; i <= remaining; i++) {
                 const nextMonthLunar = getLunarDate(nextMonth.getFullYear(), nextMonth.getMonth(), i);
-                daysGrid.innerHTML += `<div class="day other-month"><div class="day-num">${i}</div>${nextMonthLunar ? `<div class="lunar-date">${nextMonthLunar}</div>` : ''}</div>`;
+                daysGrid.innerHTML += `<div class="day other-month"><div class="day-header"><div class="day-num">${i}</div>${nextMonthLunar ? `<div class="lunar-date">${nextMonthLunar}</div>` : ''}</div></div>`;
             }
 
             renderUpcoming();
         }
 
+        let upcomingExpanded = false;
+
         function renderUpcoming() {
             const now = new Date();
             const weekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-            const upcoming = events
+            const allUpcoming = events
                 .filter(e => e.start && new Date(e.start) >= now && new Date(e.start) <= weekLater)
-                .sort((a, b) => new Date(a.start) - new Date(b.start))
-                .slice(0, 5);
+                .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+            const displayCount = 3;
+            const upcoming = upcomingExpanded ? allUpcoming : allUpcoming.slice(0, displayCount);
 
             const list = document.getElementById('upcomingList');
-            if (upcoming.length === 0) {
+            if (allUpcoming.length === 0) {
                 list.innerHTML = '<div style="color:#8c8c8c;font-size:14px;">近期无日程</div>';
                 return;
             }
@@ -1741,7 +2447,15 @@
                     <div class="event-item-title">${e.title}</div>
                     <div class="event-item-time">${new Date(e.start).toLocaleString('zh-CN', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false})}</div>
                 </div>
-            `).join('');
+            `).join('') + (allUpcoming.length > displayCount ? `
+                <div class="show-more-btn" onclick="toggleUpcoming(event)">${upcomingExpanded ? '收起' : '更多 (' + allUpcoming.length + ')'}</div>
+            ` : '');
+        }
+
+        function toggleUpcoming(event) {
+            if (event) event.stopPropagation();
+            upcomingExpanded = !upcomingExpanded;
+            renderUpcoming();
         }
 
         function changeMonth(delta) {
@@ -1911,7 +2625,10 @@
 
     <!-- Image Preview Modal -->
     <div class="image-modal" id="imageModal" onclick="closeImageModal()">
-        <img id="previewImage" src="" alt="预览图片">
+        <img id="previewImage" src="" alt="预览图片" onclick="event.stopPropagation()">
+        <button class="image-modal-nav image-modal-prev" onclick="navigateImage(-1, event)">&#10094;</button>
+        <button class="image-modal-nav image-modal-next" onclick="navigateImage(1, event)">&#10095;</button>
+        <div class="image-modal-counter" id="imageModalCounter"></div>
     </div>
 </body>
 </html>

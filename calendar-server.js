@@ -84,6 +84,46 @@ function saveData(data) {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
+// Schedule event reminder immediately
+function scheduleEventReminder(event) {
+    if (!event.start || !event.reminder) return;
+
+    const now = new Date();
+    const eventStart = new Date(event.start);
+    const reminderMinutes = event.reminder;
+
+    let reminderTime;
+    if (reminderMinutes === 0) {
+        reminderTime = eventStart;
+    } else {
+        reminderTime = new Date(eventStart.getTime() - reminderMinutes * 60 * 1000);
+    }
+
+    // Only schedule if reminder time is in the future
+    if (reminderTime > now) {
+        const delay = reminderTime.getTime() - now.getTime();
+        console.log(`[SCHEDULED] "${event.title}" reminder in ${Math.round(delay / 1000)} seconds`);
+
+        setTimeout(() => {
+            const reminderMessage = {
+                type: 'reminder',
+                event: {
+                    id: event.id,
+                    title: event.title,
+                    description: event.description,
+                    start: event.start,
+                    reminder: reminderMinutes
+                },
+                message: reminderMinutes === 0
+                    ? `"${event.title}" 现在开始`
+                    : `"${event.title}" 将在 ${reminderMinutes} 分钟后开始`
+            };
+            console.log(`[REMINDER] ${event.title} - ${reminderMessage.message}`);
+            broadcast(reminderMessage);
+        }, delay);
+    }
+}
+
 let data = loadData();
 
 // Check for due reminders every 30 seconds
@@ -145,7 +185,6 @@ setInterval(() => {
 const sentTodoReminders = new Set();
 setInterval(() => {
     const now = new Date();
-    const today = now.toISOString().slice(0, 10);
 
     (data.todos || []).forEach(todo => {
         if (todo.completed || !todo.dueDate) return;
@@ -154,8 +193,10 @@ setInterval(() => {
         if (sentTodoReminders.has(reminderKey)) return;
 
         // Check if overdue (past due date and not completed)
-        if (todo.dueDate < today) {
+        const dueDateTime = new Date(todo.dueDate);
+        if (now > dueDateTime) {
             sentTodoReminders.add(reminderKey);
+            const dueDateStr = todo.dueDate.replace('T', ' ');
             const reminderMessage = {
                 type: 'todo-overdue',
                 todo: {
@@ -164,7 +205,7 @@ setInterval(() => {
                     dueDate: todo.dueDate,
                     priority: todo.priority
                 },
-                message: `"${todo.title}" 已超过截止日期 ${todo.dueDate}`
+                message: `"${todo.title}" 已超过截止时间 ${dueDateStr}`
             };
             console.log(`[TODO OVERDUE] ${todo.title} - ${reminderMessage.message}`);
             broadcast(reminderMessage);
@@ -192,6 +233,13 @@ app.post('/api/events', (req, res) => {
     };
     data.events.push(event);
     saveData(data);
+    broadcast({ type: 'event-updated', action: 'create', event });
+
+    // Schedule reminder if set
+    if (event.reminder !== undefined && event.reminder !== null) {
+        scheduleEventReminder(event);
+    }
+
     res.json(event);
 });
 
@@ -200,6 +248,13 @@ app.put('/api/events/:id', (req, res) => {
     if (idx >= 0) {
         data.events[idx] = { ...data.events[idx], ...req.body, updatedAt: new Date().toISOString() };
         saveData(data);
+        broadcast({ type: 'event-updated', action: 'update', event: data.events[idx] });
+
+        // Schedule reminder if set
+        if (data.events[idx].reminder !== undefined && data.events[idx].reminder !== null) {
+            scheduleEventReminder(data.events[idx]);
+        }
+
         res.json(data.events[idx]);
     } else {
         res.status(404).json({ error: 'Not found' });
@@ -209,6 +264,7 @@ app.put('/api/events/:id', (req, res) => {
 app.delete('/api/events/:id', (req, res) => {
     data.events = data.events.filter(e => e.id !== req.params.id);
     saveData(data);
+    broadcast({ type: 'event-updated', action: 'delete', eventId: req.params.id });
     res.json({ success: true });
 });
 
@@ -267,14 +323,19 @@ app.get('/api/notes', (req, res) => {
     res.json(data.notes || []);
 });
 
-app.post('/api/notes', upload.single('image'), (req, res) => {
+app.post('/api/notes', upload.array('image', 20), (req, res) => {
+    // Handle multiple images (comma-separated)
+    let imagePath = null;
+    if (req.files && req.files.length > 0) {
+        imagePath = req.files.map(f => `/uploads/${f.filename}`).join(',');
+    }
     const note = {
         id: Date.now().toString(),
         title: req.body.title || '',
         content: req.body.content || '',
         color: req.body.color || '#1890ff',
         date: req.body.date || new Date().toISOString().slice(0, 10),
-        image: req.file ? `/uploads/${req.file.filename}` : null,
+        image: imagePath,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
@@ -285,32 +346,55 @@ app.post('/api/notes', upload.single('image'), (req, res) => {
     res.json(note);
 });
 
-app.put('/api/notes/:id', upload.single('image'), (req, res) => {
+app.put('/api/notes/:id', upload.array('image', 20), (req, res) => {
     const idx = (data.notes || []).findIndex(n => n.id === req.params.id);
     if (idx >= 0) {
         const oldNote = data.notes[idx];
 
-        // If a new image is uploaded, delete the old one
-        if (req.file && oldNote.image) {
-            const oldPath = path.join(__dirname, oldNote.image);
-            if (fs.existsSync(oldPath)) {
-                fs.unlinkSync(oldPath);
-            }
+        // If new images are uploaded, handle old images
+        if (req.files && req.files.length > 0 && oldNote.image) {
+            // Delete old images that are not in the remaining list
+            const oldImages = oldNote.image.split(',');
+            const newFiles = req.files.map(f => `/uploads/${f.filename}`);
+            const remainingImages = req.body.remainingImages ? req.body.remainingImages.split(',') : [];
+
+            // Delete old images not kept
+            oldImages.forEach(img => {
+                if (!remainingImages.includes(img)) {
+                    const oldPath = path.join(__dirname, img);
+                    if (fs.existsSync(oldPath)) {
+                        fs.unlinkSync(oldPath);
+                    }
+                }
+            });
         }
 
-        // If removeImage flag is set, delete the old image
+        // If removeImage flag is set, delete all old images
         if (req.body.removeImage === 'true' && oldNote.image) {
-            const oldPath = path.join(__dirname, oldNote.image);
-            if (fs.existsSync(oldPath)) {
-                fs.unlinkSync(oldPath);
-            }
+            const oldImages = oldNote.image.split(',');
+            oldImages.forEach(img => {
+                const oldPath = path.join(__dirname, img);
+                if (fs.existsSync(oldPath)) {
+                    fs.unlinkSync(oldPath);
+                }
+            });
         }
 
         const updateData = { ...req.body };
-        if (req.file) {
-            updateData.image = `/uploads/${req.file.filename}`;
+        if (req.files && req.files.length > 0) {
+            // New images uploaded - combine with remaining if any
+            const newFiles = req.files.map(f => `/uploads/${f.filename}`);
+            if (req.body.remainingImages) {
+                const remaining = req.body.remainingImages.split(',');
+                updateData.image = [...remaining, ...newFiles].join(',');
+            } else {
+                updateData.image = newFiles.join(',');
+            }
         } else if (req.body.removeImage === 'true') {
             updateData.image = null;
+        } else if (req.body.remainingImages) {
+            // Only keeping some existing images
+            updateData.image = req.body.remainingImages;
         }
 
         data.notes[idx] = { ...oldNote, ...updateData, updatedAt: new Date().toISOString() };
