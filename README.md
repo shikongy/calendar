@@ -47,14 +47,16 @@ node calendar-server.js
 
 ## API 接口
 
+> **注意**：日程/代办/记事本在创建、修改、删除后会自动通过 WebSocket 广播通知所有在线客户端，无需额外调用接口。
+
 ### 日程 (Events)
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | /api/events | 获取所有日程 |
 | GET | /api/events/:id | 获取单个日程 |
-| POST | /api/events | 创建日程 |
-| PUT | /api/events/:id | 更新日程 |
+| POST | /api/events | 创建日程（创建成功后自动推送提醒） |
+| PUT | /api/events/:id | 更新日程（修改成功后自动推送提醒） |
 | DELETE | /api/events/:id | 删除日程 |
 | GET | /api/events/date/:date | 按日期查询日程 |
 | POST | /api/reminder/push | 推送日程提醒 |
@@ -68,6 +70,8 @@ node calendar-server.js
 | PUT | /api/todos/:id | 更新代办 |
 | DELETE | /api/todos/:id | 删除代办 |
 | POST | /api/todo/reminder/push | 推送代办提醒 |
+
+**截止时间精确到分钟**，超过截止时间会自动推送逾期通知。
 
 ### 记事本 (Notes)
 
