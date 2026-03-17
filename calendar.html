@@ -151,6 +151,144 @@
             font-size: 14px;
             letter-spacing: 1px;
         }
+        /* Week View Styles */
+        .week-view {
+            display: flex;
+            height: calc(100vh - 200px);
+            min-height: 500px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+        .week-time-column {
+            flex: 0 0 50px;
+            border-right: 1px solid #e5e7eb;
+            background: #fafafa;
+            padding-top: 60px;
+        }
+        .week-time-slot {
+            height: 30px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding-right: 8px;
+            padding-top: 8px;
+            font-size: 11px;
+            color: #64748b;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .week-time-slot.half-hour {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+        .week-days-column {
+            flex: 1;
+            display: flex;
+        }
+        .week-day-column {
+            flex: 1;
+            min-width: 100px;
+            border-right: 1px solid #e5e7eb;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .week-day-header {
+            padding: 12px 8px;
+            text-align: center;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .week-day-header { height: 60px; display: flex; flex-direction: column; justify-content: center; }
+        .week-day-header .week-day-name { font-size: 12px; color: #64748b; font-weight: 500; }
+        .week-day-header .week-day-num { font-size: 20px; font-weight: 600; color: #1f2937; }
+        .week-day-header.today .week-day-num {
+            background: #10b981;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .week-day-header.other-month { background: #fafafa; }
+        .week-day-header.other-month .week-day-num { color: #cbd5e1; }
+        .week-hour-grid { position: relative; flex: 1; }
+        .week-hour-slot {
+            height: 30px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .week-hour-slot::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 1px;
+            background: #e5e7eb;
+            pointer-events: none;
+        }
+        .week-hour-slot:hover { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); }
+        .week-event {
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            overflow: hidden;
+            cursor: move;
+            z-index: 5;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            user-select: none;
+        }
+        .week-event:hover { transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 6; }
+        .week-event.dragging { opacity: 0.7; z-index: 100; cursor: moving; }
+        .week-todo-item {
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: move;
+            user-select: none;
+        }
+        .week-todo-item:hover { transform: scale(1.05); }
+        .week-todo-item.dragging { opacity: 0.7; z-index: 100; cursor: moving; }
+        .week-note-item {
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: move;
+            user-select: none;
+        }
+        .week-note-item:hover { transform: scale(1.05); }
+        .week-note-item.dragging { opacity: 0.7; z-index: 100; cursor: moving; }
+        .week-no-time-area {
+            padding: 4px;
+            border-top: 1px dashed #ddd;
+            margin-top: 4px;
+        }
+
         .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0; }
         .day {
             min-height: 80px;
@@ -929,17 +1067,19 @@
                 <div class="header">
                     <h1 id="monthTitle"></h1>
                     <div>
+                        <button class="nav-btn" id="viewToggleBtn" onclick="toggleView()">周视图</button>
                         <button class="nav-btn" onclick="changeMonth(-1)">&lt;</button>
                         <button class="nav-btn today" onclick="goToday()">今天</button>
                         <button class="nav-btn" onclick="changeMonth(1)">&gt;</button>
                     </div>
                 </div>
                 <div class="calendar">
-                    <div class="weekdays">
+                    <div class="weekdays" id="weekdayHeader">
                         <div class="weekday">日</div><div class="weekday">一</div><div class="weekday">二</div>
                         <div class="weekday">三</div><div class="weekday">四</div><div class="weekday">五</div><div class="weekday">六</div>
                     </div>
                     <div class="days" id="daysGrid"></div>
+                    <div class="week-view" id="weekGrid" style="display:none"></div>
                 </div>
             </div>
             <div class="right-sidebar">
@@ -1135,11 +1275,20 @@
         let todos = [];
         let notes = [];
         let currentDate = new Date();
+        let viewMode = 'month';
         let editingId = null;
         let editingTodoId = null;
         let editingNoteId = null;
         let ws = null;
         let currentSelectedDate = null;
+        let currentSelectedTime = null;
+
+        // 周视图拖拽相关变量
+        let isDragging = false;
+        let dragElement = null;
+        let dragData = null;
+        let dragStartY = 0;
+        let dragStartMinute = 0;
 
         // 农历计算函数
         const lunarInfo = [
@@ -1528,7 +1677,11 @@
                 events = await eventsRes.json();
                 notes = await notesRes.json();
                 todos = await todosRes.json();
-                renderCalendar();
+                if (viewMode === 'week') {
+                    renderWeekView();
+                } else {
+                    renderCalendar();
+                }
             } catch (e) {
                 console.error('Failed to load events:', e);
             }
@@ -1538,7 +1691,11 @@
             try {
                 const res = await fetch(API + '/todos');
                 todos = await res.json();
-                renderTodos();
+                if (viewMode === 'week') {
+                    renderWeekView();
+                } else {
+                    renderTodos();
+                }
             } catch (e) {
                 console.error('Failed to load todos:', e);
             }
@@ -1548,7 +1705,11 @@
             try {
                 const res = await fetch(API + '/notes');
                 notes = await res.json();
-                renderNotes();
+                if (viewMode === 'week') {
+                    renderWeekView();
+                } else {
+                    renderNotes();
+                }
             } catch (e) {
                 console.error('Failed to load notes:', e);
             }
@@ -1906,8 +2067,8 @@
             if (dateStr) {
                 document.getElementById('todoDueType').value = 'custom';
                 // Format for datetime-local input: YYYY-MM-DDTHH:mm
-                const now = new Date();
-                const dateTimeStr = dateStr + 'T' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+                const timeStr = currentSelectedTime || '09:00';
+                const dateTimeStr = dateStr + 'T' + timeStr;
                 document.getElementById('todoDueDate').value = dateTimeStr;
             } else {
                 document.getElementById('todoDueType').value = 'today';
@@ -1916,6 +2077,7 @@
             toggleTodoDueDate();
             document.getElementById('todoPriority').value = 'medium';
             document.getElementById('todoModal').classList.add('active');
+            currentSelectedTime = null;
         }
 
         function editTodo(id, e) {
@@ -2048,12 +2210,13 @@
             document.getElementById('noteContent').value = '';
             renderNoteColorPicker();
             document.getElementById('noteDate').value = dateStr || new Date().toISOString().slice(0, 10);
-            document.getElementById('noteTime').value = new Date().toTimeString().slice(0, 5);
+            document.getElementById('noteTime').value = currentSelectedTime || new Date().toTimeString().slice(0, 5);
             document.getElementById('noteImage').value = '';
             document.getElementById('noteImagePreview').innerHTML = '';
             pastedImages = [];
             document.getElementById('noteContent').addEventListener('paste', handleNotePaste);
             document.getElementById('noteModal').classList.add('active');
+            currentSelectedTime = null;
         }
 
         function editNote(id, e) {
@@ -2428,9 +2591,9 @@
 
         function renderUpcoming() {
             const now = new Date();
-            const weekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            const dayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
             const allUpcoming = events
-                .filter(e => e.start && new Date(e.start) >= now && new Date(e.start) <= weekLater)
+                .filter(e => e.start && new Date(e.start) >= now && new Date(e.start) <= dayLater)
                 .sort((a, b) => new Date(a.start) - new Date(b.start));
 
             const displayCount = 3;
@@ -2459,18 +2622,507 @@
         }
 
         function changeMonth(delta) {
-            currentDate.setMonth(currentDate.getMonth() + delta);
-            renderCalendar();
+            if (viewMode === 'week') {
+                currentDate.setDate(currentDate.getDate() + delta * 7);
+                renderWeekView();
+            } else {
+                currentDate.setMonth(currentDate.getMonth() + delta);
+                renderCalendar();
+            }
         }
 
         function goToday() {
             currentDate = new Date();
-            renderCalendar();
+            if (viewMode === 'week') {
+                document.getElementById('weekdayHeader').style.display = 'none';
+                document.getElementById('daysGrid').style.display = 'none';
+                document.getElementById('weekGrid').style.display = 'flex';
+                document.getElementById('viewToggleBtn').textContent = '月视图';
+                viewMode = 'week';
+                renderWeekView();
+            } else {
+                renderCalendar();
+            }
+        }
+
+        function toggleView() {
+            viewMode = viewMode === 'month' ? 'week' : 'month';
+            document.getElementById('viewToggleBtn').textContent = viewMode === 'month' ? '周视图' : '月视图';
+
+            if (viewMode === 'week') {
+                document.getElementById('weekdayHeader').style.display = 'none';
+                document.getElementById('daysGrid').style.display = 'none';
+                document.getElementById('weekGrid').style.display = 'flex';
+                renderWeekView();
+            } else {
+                document.getElementById('weekdayHeader').style.display = 'grid';
+                document.getElementById('daysGrid').style.display = 'grid';
+                document.getElementById('weekGrid').style.display = 'none';
+                renderCalendar();
+            }
+        }
+
+        function getWeekDates(date) {
+            const result = [];
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day;
+            for (let i = 0; i < 7; i++) {
+                result.push(new Date(d.getFullYear(), d.getMonth(), diff + i));
+            }
+            return result;
+        }
+
+        // 周视图拖拽处理函数
+        function initWeekViewDrag() {
+            const weekGrid = document.getElementById('weekGrid');
+            if (!weekGrid) return;
+
+            let dragClone = null;
+            let originalDisplay = null;
+            let isClick = false;
+            let startX = 0;
+            let startY = 0;
+
+            weekGrid.addEventListener('mousedown', function(e) {
+                const target = e.target;
+                if (target.classList.contains('week-event') ||
+                    target.classList.contains('week-todo-item') ||
+                    target.classList.contains('week-note-item')) {
+
+                    // 记录点击位置
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    isClick = true;
+
+                    // 不立即开始拖动，等待mousemove判断是否真的拖动
+                    dragElement = target;
+
+                    // 获取拖拽数据
+                    dragData = {
+                        id: target.dataset.id,
+                        type: target.dataset.type,
+                        date: target.dataset.date,
+                        hour: parseInt(target.dataset.hour),
+                        minute: parseInt(target.dataset.minute),
+                        title: target.textContent,
+                        style: target.getAttribute('style') || '',
+                        className: target.className
+                    };
+                    dragStartMinute = dragData.hour * 60 + dragData.minute;
+                    dragStartY = e.clientY;
+                }
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                // 如果还没开始拖动，检查是否移动了足够的距离
+                if (!isDragging && dragElement) {
+                    const deltaX = Math.abs(e.clientX - startX);
+                    const deltaY = Math.abs(e.clientY - startY);
+                    if (deltaX > 5 || deltaY > 5) {
+                        // 开始真正的拖动
+                        isDragging = true;
+                        isClick = false;
+
+                        // 创建克隆元素
+                        const target = dragElement;
+                        dragClone = target.cloneNode(true);
+                        dragClone.style.position = 'fixed';
+                        dragClone.style.zIndex = '1000';
+                        dragClone.style.pointerEvents = 'none';
+                        dragClone.style.width = target.offsetWidth + 'px';
+                        dragClone.style.left = (e.clientX - target.offsetWidth / 2) + 'px';
+                        dragClone.style.top = (e.clientY - 15) + 'px';
+                        dragClone.style.opacity = '0.8';
+                        dragClone.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+
+                        originalDisplay = target.style.display;
+                        target.style.display = 'none';
+
+                        document.body.appendChild(dragClone);
+                        document.body.style.cursor = 'move';
+                    }
+                    return;
+                }
+
+                if (!isDragging || !dragClone) return;
+
+                // 更新克隆元素位置
+                dragClone.style.left = (e.clientX - dragClone.offsetWidth / 2) + 'px';
+                dragClone.style.top = (e.clientY - 15) + 'px';
+
+                const weekDaysColumn = document.querySelector('.week-days-column');
+                if (!weekDaysColumn) return;
+
+                // 找到鼠标当前所在的格子
+                const slots = weekDaysColumn.querySelectorAll('.week-hour-slot');
+                let targetSlot = null;
+                let targetRect = null;
+
+                for (const slot of slots) {
+                    const rect = slot.getBoundingClientRect();
+                    if (e.clientX >= rect.left && e.clientX <= rect.right &&
+                        e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                        targetSlot = slot;
+                        targetRect = rect;
+                        break;
+                    }
+                }
+
+                if (targetSlot && targetRect) {
+                    // 获取格子对应的日期和时间
+                    const onclickAttr = targetSlot.getAttribute('onclick');
+                    if (!onclickAttr) return;
+
+                    const match = onclickAttr.match(/openTypeSelectModalWithTime\('([^']+)',\s*(\d+),\s*(\d+)/);
+                    if (!match) return;
+
+                    const newDate = match[1];
+                    const newHour = parseInt(match[2]);
+                    const newMinute = parseInt(match[3]);
+
+                    // 计算新的日期时间
+                    const deltaMinute = (newHour * 60 + newMinute) - dragStartMinute;
+                    let newTotalMinute = dragStartMinute + deltaMinute;
+
+                    // 限制在0-1439分钟（0:00-23:59）之间
+                    newTotalMinute = Math.max(0, Math.min(1439, newTotalMinute));
+                    const finalHour = Math.floor(newTotalMinute / 60);
+                    const finalMinute = newTotalMinute % 60;
+
+                    // 更新data属性
+                    dragData.targetDate = newDate;
+                    dragData.targetHour = finalHour;
+                    dragData.targetMinute = finalMinute;
+                }
+            });
+
+            document.addEventListener('mouseup', async function(e) {
+                // 如果没有开始拖动，说明是点击，触发编辑
+                if (!isDragging) {
+                    if (dragElement && dragData) {
+                        // 触发编辑
+                        if (dragData.type === 'event') {
+                            editEvent(dragData.id, e);
+                        } else if (dragData.type === 'todo') {
+                            editTodo(dragData.id, e);
+                        } else if (dragData.type === 'note') {
+                            editNote(dragData.id, e);
+                        }
+                    }
+                    // 清理
+                    dragElement = null;
+                    dragData = null;
+                    isClick = false;
+                    return;
+                }
+
+                // 拖动结束，保存位置
+                // 恢复原始元素显示
+                if (dragElement) {
+                    dragElement.style.display = originalDisplay || '';
+                }
+
+                // 删除克隆元素
+                if (dragClone && dragClone.parentNode) {
+                    dragClone.parentNode.removeChild(dragClone);
+                }
+
+                document.body.style.cursor = '';
+
+                // 如果有目标位置则保存
+                if (dragData && dragData.targetDate !== undefined) {
+                    const newDate = dragData.targetDate;
+                    const newHour = dragData.targetHour;
+                    const newMinute = dragData.targetMinute;
+
+                    const newTimeStr = `${String(newHour).padStart(2, '0')}:${String(newMinute).padStart(2, '0')}`;
+                    const newDateTime = `${newDate}T${newTimeStr}`;
+
+                    // 更新数据
+                    try {
+                        if (dragData.type === 'event') {
+                            const event = events.find(ev => ev.id === dragData.id);
+                            if (event) {
+                                event.start = newDateTime;
+                                // 结束时间也相应推迟
+                                if (event.end) {
+                                    const oldStart = new Date(event.start).getTime();
+                                    const oldEnd = new Date(event.end).getTime();
+                                    const diff = oldEnd - oldStart;
+                                    event.end = new Date(new Date(newDateTime).getTime() + diff).toISOString();
+                                }
+                                await fetch(`${API}/events/${dragData.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(event)
+                                });
+                            }
+                        } else if (dragData.type === 'todo') {
+                            const todo = todos.find(t => t.id === dragData.id);
+                            if (todo) {
+                                todo.dueDate = newDateTime;
+                                await fetch(`${API}/todos/${dragData.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(todo)
+                                });
+                            }
+                        } else if (dragData.type === 'note') {
+                            const note = notes.find(n => n.id === dragData.id);
+                            if (note) {
+                                note.date = newDateTime;
+                                await fetch(`${API}/notes/${dragData.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(note)
+                                });
+                            }
+                        }
+
+                        // 刷新周视图
+                        if (viewMode === 'week') {
+                            renderWeekView();
+                        }
+                    } catch (err) {
+                        console.error('更新失败:', err);
+                        alert('更新失败');
+                    }
+                }
+
+                isDragging = false;
+                dragElement = null;
+                dragClone = null;
+                dragData = null;
+            });
+        }
+
+        function renderWeekView() {
+            const weekDates = getWeekDates(currentDate);
+            const weekGrid = document.getElementById('weekGrid');
+            const today = new Date();
+
+            const startDate = weekDates[0];
+            const endDate = weekDates[6];
+            document.getElementById('monthTitle').textContent = `${startDate.getMonth() + 1}月${startDate.getDate()}日 - ${endDate.getMonth() + 1}月${endDate.getDate()}日`;
+            document.getElementById('viewToggleBtn').textContent = '月视图';
+
+            // Create time column (按半小时为单位)
+            let timeColumn = '<div class="week-time-column">';
+            for (let h = 0; h < 24; h++) {
+                timeColumn += `<div class="week-time-slot">${String(h).padStart(2, '0')}:00</div>`;
+                timeColumn += `<div class="week-time-slot half-hour">${String(h).padStart(2, '0')}:30</div>`;
+            }
+            timeColumn += '</div>';
+
+            // Create day columns
+            let dayColumns = '';
+            weekDates.forEach((date, dayIndex) => {
+                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                const isToday = today.getFullYear() === date.getFullYear() &&
+                               today.getMonth() === date.getMonth() &&
+                               today.getDate() === date.getDate();
+                const isOtherMonth = date.getMonth() !== currentDate.getMonth();
+                const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+
+                let dayColumn = `<div class="week-day-column">
+                    <div class="week-day-header ${isToday ? 'today' : ''} ${isOtherMonth ? 'other-month' : ''}">
+                        <div class="week-day-name">周${dayNames[dayIndex]}</div>
+                        <div class="week-day-num">${date.getDate()}</div>
+                    </div>
+                    <div class="week-hour-grid">`;
+
+                // 辅助函数：统一时间格式为 ISO 格式（支持 T 或空格分隔）
+                const normalizeDateTime = (dt) => {
+                    if (!dt) return null;
+                    // 把空格分隔的转换为 T 分隔
+                    return dt.replace(' ', 'T');
+                };
+
+                // 辅助函数：检查是否有具体时间（不是只有日期）
+                const hasTime = (dt) => {
+                    if (!dt) return false;
+                    return dt.includes('T') || dt.includes(' ');
+                };
+
+                // 辅助函数：获取小时数
+                const getHour = (dt) => {
+                    if (!dt) return -1;
+                    const normalized = normalizeDateTime(dt);
+                    const match = normalized.match(/T(\d{2}):/);
+                    return match ? parseInt(match[1]) : -1;
+                };
+
+                // 辅助函数：获取分钟数
+                const getMinute = (dt) => {
+                    if (!dt) return 0;
+                    const normalized = normalizeDateTime(dt);
+                    const match = normalized.match(/T\d{2}:(\d{2})/);
+                    return match ? parseInt(match[1]) : 0;
+                };
+
+                // 预先获取当天所有待办和记事
+                const dayTodos = todos.filter(t => {
+                    if (t.completed) return false;
+                    // dueType 为 today 的待办显示在当天
+                    if (t.dueType === 'today') {
+                        const today = new Date();
+                        const todoDate = new Date(t.dueDate);
+                        return todoDate.toDateString() === today.toDateString();
+                    }
+                    // dueType 为 week 的待办显示在整周
+                    if (t.dueType === 'week') {
+                        const todoDate = new Date(t.dueDate);
+                        const weekStart = new Date(currentDate);
+                        weekStart.setDate(currentDate.getDate() - ((currentDate.getDay() + 6) % 7));
+                        const weekEnd = new Date(weekStart);
+                        weekEnd.setDate(weekStart.getDate() + 6);
+                        return todoDate >= weekStart && todoDate <= weekEnd;
+                    }
+                    // dueType 为 month 的待办显示在整月
+                    if (t.dueType === 'month') {
+                        const todoDate = new Date(t.dueDate);
+                        return todoDate.getFullYear() === currentDate.getFullYear() &&
+                               todoDate.getMonth() === currentDate.getMonth();
+                    }
+                    // custom 或有具体日期的待办
+                    if (t.dueDate) return t.dueDate.startsWith(dateStr);
+                    return false;
+                });
+                const dayNotes = notes.filter(n => {
+                    if (!n.date) return false;
+                    // 统一时间格式后比较日期
+                    const normalized = normalizeDateTime(n.date);
+                    return normalized && normalized.startsWith(dateStr);
+                });
+
+                // 按时间排序
+                dayTodos.sort((a, b) => {
+                    const timeA = normalizeDateTime(a.dueDate) || '9999-99-99T99:99:99';
+                    const timeB = normalizeDateTime(b.dueDate) || '9999-99-99T99:99:99';
+                    return new Date(timeA).getTime() - new Date(timeB).getTime();
+                });
+                dayNotes.sort((a, b) => {
+                    const timeA = normalizeDateTime(a.date) || '9999-99-99T99:99:99';
+                    const timeB = normalizeDateTime(b.date) || '9999-99-99T99:99:99';
+                    return new Date(timeA).getTime() - new Date(timeB).getTime();
+                });
+
+                // 生成48个半小时格子
+                for (let h = 0; h < 48; h++) {
+                    const hour = Math.floor(h / 2);
+                    const minute = (h % 2) * 30;
+                    const hourStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                    const nextHour = Math.floor((h + 1) / 2);
+                    const nextMinute = ((h + 1) % 2) * 30;
+                    const nextHourStr = `${String(nextHour).padStart(2, '0')}:${String(nextMinute).padStart(2, '0')}`;
+
+                    // Find events in this half-hour slot
+                    const hourEvents = events.filter(e => {
+                        if (!e.start) return false;
+                        const eventDate = e.start.slice(0, 10);
+                        const eventHour = parseInt(e.start.slice(11, 13));
+                        const eventMinute = parseInt(e.start.slice(14, 16));
+                        // 计算事件在哪个半小时格子
+                        const eventSlot = eventHour * 2 + Math.floor(eventMinute / 30);
+                        return eventDate === dateStr && eventSlot === h;
+                    });
+
+                    let eventsHtml = '';
+                    hourEvents.forEach(e => {
+                        const eventColor = e.color || '#1890ff';
+                        const startMinute = parseInt(e.start.slice(14, 16)) || 0;
+                        const height = 30;
+                        // 事件在这个格子中的相对位置
+                        const relativeMinute = startMinute - minute;
+                        eventsHtml += `<div class="week-event" data-id="${e.id}" data-type="event" data-date="${dateStr}" data-hour="${hour}" data-minute="${minute}"
+                            style="background:${eventColor}20;color:${eventColor};border-left:3px solid ${eventColor};top:${relativeMinute}px;height:${height}px"
+                            onclick="editEvent('${e.id}', event)">📅 ${e.title}</div>`;
+                    });
+
+                    // Find todos for this half-hour slot
+                    const hourTodos = dayTodos.filter(t => {
+                        if (!hasTime(t.dueDate)) return false;
+                        const todoHour = getHour(t.dueDate);
+                        const todoMinute = getMinute(t.dueDate);
+                        return todoHour === hour && todoMinute >= minute && todoMinute < minute + 30;
+                    });
+
+                    let todosHtml = '';
+                    hourTodos.forEach(t => {
+                        const priorityColor = t.priority === 'high' ? '#ef4444' : t.priority === 'medium' ? '#f59e0b' : '#10b981';
+                        const dueMinute = getMinute(t.dueDate);
+                        const relativeMinute = dueMinute - minute;
+                        todosHtml += `<div class="week-todo-item" data-id="${t.id}" data-type="todo" data-date="${dateStr}" data-hour="${hour}" data-minute="${minute}"
+                            style="background:${priorityColor}20;color:${priorityColor};border-left:2px solid ${priorityColor};top:${relativeMinute}px;height:30px"
+                            onclick="editTodo('${t.id}', event)">☑️ ${t.title}</div>`;
+                    });
+
+                    // Find notes for this half-hour slot
+                    const hourNotes = dayNotes.filter(n => {
+                        if (!hasTime(n.date)) return false;
+                        const noteHour = getHour(n.date);
+                        const noteMinute = getMinute(n.date);
+                        return noteHour === hour && noteMinute >= minute && noteMinute < minute + 30;
+                    });
+
+                    let notesHtml = '';
+                    hourNotes.forEach(n => {
+                        const noteColor = n.color || '#1890ff';
+                        const noteMinute = getMinute(n.date);
+                        const relativeMinute = noteMinute - minute;
+                        notesHtml += `<div class="week-note-item" data-id="${n.id}" data-type="note" data-date="${dateStr}" data-hour="${hour}" data-minute="${minute}"
+                            style="background:${noteColor}10;color:${noteColor};border:1px dashed ${noteColor};top:${relativeMinute}px;height:30px"
+                            onclick="editNote('${n.id}', event)">📝 ${n.title}</div>`;
+                    });
+
+                    dayColumn += `<div class="week-hour-slot" onclick="openTypeSelectModalWithTime('${dateStr}', ${hour}, ${minute}, event)">${eventsHtml}${todosHtml}${notesHtml}</div>`;
+                }
+
+                // 显示没有具体时间的待办和记事
+                const noTimeTodos = dayTodos.filter(t => !hasTime(t.dueDate));
+                const noTimeNotes = dayNotes.filter(n => !hasTime(n.date));
+
+                if (noTimeTodos.length > 0 || noTimeNotes.length > 0) {
+                    let noTimeHtml = '<div class="week-no-time-area">';
+                    noTimeTodos.forEach(t => {
+                        const priorityColor = t.priority === 'high' ? '#ef4444' : t.priority === 'medium' ? '#f59e0b' : '#10b981';
+                        noTimeHtml += `<div class="week-todo-item" style="background:${priorityColor}20;color:${priorityColor};border-left:2px solid ${priorityColor};position:relative"
+                            onclick="editTodo('${t.id}', event)">☑️ ${t.title}</div>`;
+                    });
+                    noTimeNotes.forEach(n => {
+                        const noteColor = n.color || '#1890ff';
+                        noTimeHtml += `<div class="week-note-item" style="background:${noteColor}10;color:${noteColor};border:1px dashed ${noteColor};position:relative"
+                            onclick="editNote('${n.id}', event)">📝 ${n.title}</div>`;
+                    });
+                    noTimeHtml += '</div>';
+                    dayColumn += noTimeHtml;
+                }
+
+                dayColumn += '</div></div>';
+                dayColumns += dayColumn;
+            });
+
+            weekGrid.innerHTML = timeColumn + '<div class="week-days-column">' + dayColumns + '</div>';
+
+            // 初始化拖拽功能
+            initWeekViewDrag();
+
+            // 更新即将到来的日程
+            renderUpcoming();
         }
 
         // Type select modal functions
         function openTypeSelectModal(dateStr) {
             currentSelectedDate = dateStr;
+            currentSelectedTime = null;
+            document.getElementById('typeSelectModal').classList.add('active');
+        }
+
+        function openTypeSelectModalWithTime(dateStr, hour, minute = 0, e) {
+            if (e) e.stopPropagation();
+            currentSelectedDate = dateStr;
+            currentSelectedTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
             document.getElementById('typeSelectModal').classList.add('active');
         }
 
@@ -2500,13 +3152,17 @@
             document.getElementById('eventTitle').value = '';
             document.getElementById('eventDesc').value = '';
             const defaultDate = dateStr || new Date().toISOString().slice(0, 10);
+            const defaultTime = currentSelectedTime || '09:00';
             document.getElementById('eventStartDate').value = defaultDate;
-            document.getElementById('eventStartTime').value = '09:00';
+            document.getElementById('eventStartTime').value = defaultTime;
+            // 结束时间默认为开始时间+1小时
+            const endHour = currentSelectedTime ? parseInt(currentSelectedTime.slice(0, 2)) + 1 : 10;
             document.getElementById('eventEndDate').value = defaultDate;
-            document.getElementById('eventEndTime').value = '10:00';
+            document.getElementById('eventEndTime').value = `${String(endHour).padStart(2, '0')}:00`;
             document.getElementById('eventReminder').value = '0';
             renderColorPicker();
             document.getElementById('eventModal').classList.add('active');
+            currentSelectedTime = null;
         }
 
         function editEvent(id, e) {

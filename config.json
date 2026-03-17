@@ -1,0 +1,6 @@
+{
+  "feishu": {
+    "webhookUrl": "https://open.feishu.cn/open-apis/bot/v2/hook/2a2fa12a-1d5e-4e09-bf04-c674ef5bee95",
+    "enabled": true
+  }
+}

@@ -5,6 +5,7 @@ const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
 const multer = require('multer');
+const { sendReminderNotification } = require('./feishu-notify');
 
 const app = express();
 const server = http.createServer(app);
@@ -40,7 +41,7 @@ const upload = multer({
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb', extended: true }));
 app.use('/uploads', express.static(uploadDir));
 
 // WebSocket clients
@@ -120,6 +121,7 @@ function scheduleEventReminder(event) {
             };
             console.log(`[REMINDER] ${event.title} - ${reminderMessage.message}`);
             broadcast(reminderMessage);
+            sendReminderNotification(reminderMessage);
         }, delay);
     }
 }
@@ -156,6 +158,7 @@ setInterval(() => {
                 };
                 console.log(`[REMINDER] ${event.title} - ${reminderMessage.message}`);
                 broadcast(reminderMessage);
+                sendReminderNotification(reminderMessage);
             }
         } else {
             // X minutes before
@@ -176,42 +179,13 @@ setInterval(() => {
                 };
                 console.log(`[REMINDER] ${event.title} - ${reminderMessage.message}`);
                 broadcast(reminderMessage);
+                sendReminderNotification(reminderMessage);
             }
         }
     });
 }, 30000);
 
-// Check for overdue todos every minute
-const sentTodoReminders = new Set();
-setInterval(() => {
-    const now = new Date();
-
-    (data.todos || []).forEach(todo => {
-        if (todo.completed || !todo.dueDate) return;
-
-        const reminderKey = `${todo.id}-overdue`;
-        if (sentTodoReminders.has(reminderKey)) return;
-
-        // Check if overdue (past due date and not completed)
-        const dueDateTime = new Date(todo.dueDate);
-        if (now > dueDateTime) {
-            sentTodoReminders.add(reminderKey);
-            const dueDateStr = todo.dueDate.replace('T', ' ');
-            const reminderMessage = {
-                type: 'todo-overdue',
-                todo: {
-                    id: todo.id,
-                    title: todo.title,
-                    dueDate: todo.dueDate,
-                    priority: todo.priority
-                },
-                message: `"${todo.title}" 已超过截止时间 ${dueDateStr}`
-            };
-            console.log(`[TODO OVERDUE] ${todo.title} - ${reminderMessage.message}`);
-            broadcast(reminderMessage);
-        }
-    });
-}, 60000);
+// Todo automatic reminders have been disabled
 
 // API Routes
 app.get('/api/events', (req, res) => {
@@ -443,7 +417,8 @@ app.post('/api/reminder/push', (req, res) => {
             message: message || `"${event.title}" 将开始`
         };
         broadcast(reminderMessage);
-        
+        sendReminderNotification(reminderMessage);
+
         res.json({ success: true, message: 'Reminder pushed' });
     } else {
         res.status(404).json({ error: 'Event not found' });
@@ -468,6 +443,7 @@ app.post('/api/todo/reminder/push', (req, res) => {
             message: message || `"${todo.title}" 截止日期: ${todo.dueDate}`
         };
         broadcast(reminderMessage);
+        sendReminderNotification(reminderMessage);
 
         res.json({ success: true, message: 'Todo reminder pushed' });
     } else {
