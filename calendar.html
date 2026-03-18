@@ -130,6 +130,25 @@
             background: #10b981;
             box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
         }
+        .filter-group { display: flex; align-items: center; gap: 6px; }
+        .filter-btn {
+            background: #4f46e5;
+            color: white;
+            border: 2px solid #4f46e5;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        .filter-btn.inactive {
+            background: transparent;
+            color: #9ca3af;
+            border: 2px dashed #9ca3af;
+        }
+        .filter-btn:hover {
+            transform: translateY(-1px);
+        }
         .calendar {
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(10px);
@@ -678,6 +697,9 @@
             box-shadow: 0 12px 35px rgba(99, 102, 241, 0.45);
         }
         .color-picker { display: flex; gap: 10px; margin-top: 10px; }
+        .repeat-days { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+        .repeat-days label { display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 14px; }
+        .repeat-days input[type="checkbox"] { cursor: pointer; }
         .color-opt {
             width: 36px;
             height: 36px;
@@ -1066,7 +1088,19 @@
             <div class="calendar-wrapper">
                 <div class="header">
                     <h1 id="monthTitle"></h1>
-                    <div>
+                    <div class="filter-group">
+                        <label class="filter-btn" id="filterEvents">
+                            <input type="checkbox" checked onchange="toggleFilter('events')" style="display:none">
+                            <span>📅日程</span>
+                        </label>
+                        <label class="filter-btn" id="filterTodos">
+                            <input type="checkbox" checked onchange="toggleFilter('todos')" style="display:none">
+                            <span>☑️待办</span>
+                        </label>
+                        <label class="filter-btn" id="filterNotes">
+                            <input type="checkbox" checked onchange="toggleFilter('notes')" style="display:none">
+                            <span>📝记事</span>
+                        </label>
                         <button class="nav-btn" id="viewToggleBtn" onclick="toggleView()">周视图</button>
                         <button class="nav-btn" onclick="changeMonth(-1)">&lt;</button>
                         <button class="nav-btn today" onclick="goToday()">今天</button>
@@ -1133,6 +1167,29 @@
                     <option value="60">1小时前</option>
                     <option value="1440">1天前</option>
                 </select>
+            </div>
+            <div class="form-group">
+                <label>重复</label>
+                <select id="eventRepeat" onchange="onRepeatChange()">
+                    <option value="none">不重复</option>
+                    <option value="daily">每天</option>
+                    <option value="weekly">每周</option>
+                    <option value="monthly">每月</option>
+                    <option value="yearly">每年</option>
+                    <option value="custom">自定义</option>
+                </select>
+            </div>
+            <div class="form-group" id="customRepeatDays" style="display:none">
+                <label>选择星期</label>
+                <div class="repeat-days">
+                    <label><input type="checkbox" value="0"> 日</label>
+                    <label><input type="checkbox" value="1"> 一</label>
+                    <label><input type="checkbox" value="2"> 二</label>
+                    <label><input type="checkbox" value="3"> 三</label>
+                    <label><input type="checkbox" value="4"> 四</label>
+                    <label><input type="checkbox" value="5"> 五</label>
+                    <label><input type="checkbox" value="6"> 六</label>
+                </div>
             </div>
             <div class="modal-btns">
                 <button class="btn btn-danger" id="deleteBtn" style="display:none" onclick="deleteEvent()">删除</button>
@@ -1276,6 +1333,11 @@
         let notes = [];
         let currentDate = new Date();
         let viewMode = 'month';
+        let filters = {
+            events: true,
+            todos: true,
+            notes: true
+        };
         let editingId = null;
         let editingTodoId = null;
         let editingNoteId = null;
@@ -1968,12 +2030,8 @@
             const dateTitle = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
             document.getElementById('dayDetailTitle').textContent = dateTitle;
 
-            // Filter events for this date
-            const dayEvents = events.filter(e => {
-                if (!e.start) return false;
-                const eventDate = e.start.split('T')[0];
-                return eventDate === dateStr;
-            });
+            // Filter events for this date (including repeat events)
+            const dayEvents = expandRepeatEvents(dateStr);
 
             // Filter todos for this date
             const dayTodos = todos.filter(t => {
@@ -2007,13 +2065,15 @@
             if (dayEvents.length === 0) {
                 eventsContainer.innerHTML = '<div style="color:#999;font-size:14px">暂无日程</div>';
             } else {
-                eventsContainer.innerHTML = dayEvents.map(e => `
+                eventsContainer.innerHTML = dayEvents.map(e => {
+                    const repeatIcon = e.repeat && e.repeat !== 'none' ? '🔁' : '';
+                    return `
                     <div class="day-detail-item" style="border-left-color:${e.color};background:${e.color}10" onclick="editEvent('${e.id}', event)">
-                        <div class="day-detail-item-title">${e.title}</div>
+                        <div class="day-detail-item-title">${repeatIcon} ${e.title}</div>
                         <div class="day-detail-item-time">${e.start ? new Date(e.start).toLocaleString('zh-CN', {hour:'2-digit', minute:'2-digit', hour12:false}) : ''} ${e.end ? '- ' + new Date(e.end).toLocaleString('zh-CN', {hour:'2-digit', minute:'2-digit', hour12:false}) : ''}</div>
                         ${e.description ? `<div class="day-detail-item-desc">${e.description}</div>` : ''}
                     </div>
-                `).join('');
+                `}).join('');
             }
 
             // Render todos
@@ -2497,7 +2557,7 @@
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const dayEvents = events.filter(e => e.start && e.start.startsWith(dateStr));
+                const dayEvents = expandRepeatEvents(dateStr);
                 const dayNotes = notes.filter(n => {
                     const noteDate = n.date || '';
                     return noteDate.startsWith(dateStr);
@@ -2530,33 +2590,46 @@
 
                 // 最多显示3条内容
                 const maxDisplay = 3;
-                const allItems = [...dayEvents, ...dayNotes, ...dayTodos];
+                const filteredEvents = filters.events ? dayEvents : [];
+                const filteredNotes = filters.notes ? dayNotes : [];
+                const filteredTodos = filters.todos ? dayTodos : [];
+                const allItems = [...filteredEvents, ...filteredNotes, ...filteredTodos];
                 const totalCount = allItems.length;
                 const displayItems = allItems.slice(0, maxDisplay);
 
                 // 用 start 字段区分事件，用 content 或 date 区分记事，用 dueType/dueDate 区分待办
-                let eventsHtml = displayItems.filter(item => item.start).map(e => {
-                    const eventColor = e.color || '#1890ff';
-                    return `<div class="event" style="background:${eventColor}20;color:${eventColor};border-left:3px solid ${eventColor}"
-                        onclick="editEvent('${e.id}', event)">📅 ${e.title}</div>`;
-                }).join('');
+                let eventsHtml = '';
+                if (filters.events) {
+                    eventsHtml = displayItems.filter(item => item.start).map(e => {
+                        const eventColor = e.color || '#1890ff';
+                        const repeatIcon = e.repeat && e.repeat !== 'none' ? '🔁' : '';
+                        return `<div class="event" style="background:${eventColor}20;color:${eventColor};border-left:3px solid ${eventColor}"
+                            onclick="editEvent('${e.id}', event)">📅 ${repeatIcon} ${e.title}</div>`;
+                    }).join('');
+                }
 
-                let notesHtml = displayItems.filter(item => !item.start && (item.content !== undefined || item.date) && !item.dueType).map(n => {
-                    const noteColor = n.color || '#1890ff';
-                    return `<div class="note-event" style="background:${noteColor}10;color:${noteColor};border:1px dashed ${noteColor}"
-                        onclick="editNote('${n.id}', event)">📝 ${n.title}</div>`;
-                }).join('');
+                let notesHtml = '';
+                if (filters.notes) {
+                    notesHtml = displayItems.filter(item => !item.start && (item.content !== undefined || item.date) && !item.dueType).map(n => {
+                        const noteColor = n.color || '#1890ff';
+                        return `<div class="note-event" style="background:${noteColor}10;color:${noteColor};border:1px dashed ${noteColor}"
+                            onclick="editNote('${n.id}', event)">📝 ${n.title}</div>`;
+                    }).join('');
+                }
 
-                let todosHtml = displayItems.filter(item => item.dueType !== undefined || item.dueDate).map(t => {
-                    const priorityColor = t.priority === 'high' ? '#ef4444' : t.priority === 'medium' ? '#f59e0b' : '#10b981';
-                    let timeStr = '';
-                    if (t.dueDate && t.dueDate.includes('T')) {
-                        const time = t.dueDate.split('T')[1];
-                        if (time) timeStr = ' ' + time.substring(0, 5);
-                    }
-                    return `<div class="todo-event" style="background:${priorityColor}10;color:${priorityColor};border-left:3px solid ${priorityColor}"
-                        onclick="editTodo('${t.id}', event)">☑ ${t.title}${timeStr}</div>`;
-                }).join('');
+                let todosHtml = '';
+                if (filters.todos) {
+                    todosHtml = displayItems.filter(item => item.dueType !== undefined || item.dueDate).map(t => {
+                        const priorityColor = t.priority === 'high' ? '#ef4444' : t.priority === 'medium' ? '#f59e0b' : '#10b981';
+                        let timeStr = '';
+                        if (t.dueDate && t.dueDate.includes('T')) {
+                            const time = t.dueDate.split('T')[1];
+                            if (time) timeStr = ' ' + time.substring(0, 5);
+                        }
+                        return `<div class="todo-event" style="background:${priorityColor}10;color:${priorityColor};border-left:3px solid ${priorityColor}"
+                            onclick="editTodo('${t.id}', event)">☑ ${t.title}${timeStr}</div>`;
+                    }).join('');
+                }
 
                 const lunarDate = getLunarDate(year, month, day);
 
@@ -2592,9 +2665,45 @@
         function renderUpcoming() {
             const now = new Date();
             const dayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            const allUpcoming = events
-                .filter(e => e.start && new Date(e.start) >= now && new Date(e.start) <= dayLater)
-                .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+            // Use local date format
+            const toLocalDateStr = (d) => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            // Expand repeat events for upcoming view
+            const upcomingEvents = [];
+            const upcomingEventIds = new Set();
+
+            // Show events within 12 hours from now
+            const twelveHoursLater = new Date(now.getTime() + 12 * 60 * 60 * 1000);
+
+            // Check events for the next 2 days
+            for (let i = 0; i < 2; i++) {
+                const date = new Date(now);
+                date.setDate(date.getDate() + i);
+                const dateStr = toLocalDateStr(date);
+
+                const dayEvents = expandRepeatEvents(dateStr);
+                dayEvents.forEach(e => {
+                    const eventDate = new Date(e.start);
+
+                    // Only show events within 12 hours from now
+                    if (eventDate < now) return;
+                    if (eventDate > twelveHoursLater) return;
+
+                    // Avoid duplicates
+                    if (!upcomingEventIds.has(e.id)) {
+                        upcomingEventIds.add(e.id);
+                        upcomingEvents.push(e);
+                    }
+                });
+            }
+
+            const allUpcoming = upcomingEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
 
             const displayCount = 3;
             const upcoming = upcomingExpanded ? allUpcoming : allUpcoming.slice(0, displayCount);
@@ -2605,12 +2714,14 @@
                 return;
             }
 
-            list.innerHTML = upcoming.map(e => `
+            list.innerHTML = upcoming.map(e => {
+                const repeatIcon = e.repeat && e.repeat !== 'none' ? '🔁' : '';
+                return `
                 <div class="event-item" style="border-left-color:${e.color}" onclick="editEvent('${e.id}', event)">
-                    <div class="event-item-title">${e.title}</div>
+                    <div class="event-item-title">${repeatIcon} ${e.title}</div>
                     <div class="event-item-time">${new Date(e.start).toLocaleString('zh-CN', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false})}</div>
                 </div>
-            `).join('') + (allUpcoming.length > displayCount ? `
+            `}).join('') + (allUpcoming.length > displayCount ? `
                 <div class="show-more-btn" onclick="toggleUpcoming(event)">${upcomingExpanded ? '收起' : '更多 (' + allUpcoming.length + ')'}</div>
             ` : '');
         }
@@ -2644,6 +2755,27 @@
                 renderCalendar();
             }
         }
+
+        function toggleFilter(type) {
+            filters[type] = !filters[type];
+            updateFilterButtons();
+
+            // Re-render current view
+            if (viewMode === 'week') {
+                renderWeekView();
+            } else {
+                renderCalendar();
+            }
+        }
+
+        function updateFilterButtons() {
+            document.getElementById('filterEvents').classList.toggle('inactive', !filters.events);
+            document.getElementById('filterTodos').classList.toggle('inactive', !filters.todos);
+            document.getElementById('filterNotes').classList.toggle('inactive', !filters.notes);
+        }
+
+        // Initialize filter buttons on page load
+        document.addEventListener('DOMContentLoaded', updateFilterButtons);
 
         function toggleView() {
             viewMode = viewMode === 'month' ? 'week' : 'month';
@@ -2989,6 +3121,7 @@
                     if (t.dueDate) return t.dueDate.startsWith(dateStr);
                     return false;
                 });
+
                 const dayNotes = notes.filter(n => {
                     if (!n.date) return false;
                     // 统一时间格式后比较日期
@@ -2997,7 +3130,7 @@
                 });
 
                 // 按时间排序
-                dayTodos.sort((a, b) => {
+                (filters.todos ? dayTodos : []).sort((a, b) => {
                     const timeA = normalizeDateTime(a.dueDate) || '9999-99-99T99:99:99';
                     const timeB = normalizeDateTime(b.dueDate) || '9999-99-99T99:99:99';
                     return new Date(timeA).getTime() - new Date(timeB).getTime();
@@ -3017,16 +3150,19 @@
                     const nextMinute = ((h + 1) % 2) * 30;
                     const nextHourStr = `${String(nextHour).padStart(2, '0')}:${String(nextMinute).padStart(2, '0')}`;
 
-                    // Find events in this half-hour slot
-                    const hourEvents = events.filter(e => {
-                        if (!e.start) return false;
-                        const eventDate = e.start.slice(0, 10);
-                        const eventHour = parseInt(e.start.slice(11, 13));
-                        const eventMinute = parseInt(e.start.slice(14, 16));
-                        // 计算事件在哪个半小时格子
-                        const eventSlot = eventHour * 2 + Math.floor(eventMinute / 30);
-                        return eventDate === dateStr && eventSlot === h;
-                    });
+                    // Find events in this half-hour slot (including repeat events)
+                    let hourEvents = [];
+                    if (filters.events) {
+                        const dayEventsForWeek = expandRepeatEvents(dateStr);
+                        hourEvents = dayEventsForWeek.filter(e => {
+                            if (!e.start) return false;
+                            const eventHour = parseInt(e.start.slice(11, 13));
+                            const eventMinute = parseInt(e.start.slice(14, 16));
+                            // 计算事件在哪个半小时格子
+                            const eventSlot = eventHour * 2 + Math.floor(eventMinute / 30);
+                            return eventSlot === h;
+                        });
+                    }
 
                     let eventsHtml = '';
                     hourEvents.forEach(e => {
@@ -3035,13 +3171,14 @@
                         const height = 30;
                         // 事件在这个格子中的相对位置
                         const relativeMinute = startMinute - minute;
+                        const repeatIcon = e.repeat && e.repeat !== 'none' ? '🔁' : '';
                         eventsHtml += `<div class="week-event" data-id="${e.id}" data-type="event" data-date="${dateStr}" data-hour="${hour}" data-minute="${minute}"
                             style="background:${eventColor}20;color:${eventColor};border-left:3px solid ${eventColor};top:${relativeMinute}px;height:${height}px"
-                            onclick="editEvent('${e.id}', event)">📅 ${e.title}</div>`;
+                            onclick="editEvent('${e.id}', event)">📅 ${repeatIcon} ${e.title}</div>`;
                     });
 
                     // Find todos for this half-hour slot
-                    const hourTodos = dayTodos.filter(t => {
+                    const hourTodos = (filters.todos ? dayTodos : []).filter(t => {
                         if (!hasTime(t.dueDate)) return false;
                         const todoHour = getHour(t.dueDate);
                         const todoMinute = getMinute(t.dueDate);
@@ -3059,7 +3196,7 @@
                     });
 
                     // Find notes for this half-hour slot
-                    const hourNotes = dayNotes.filter(n => {
+                    const hourNotes = (filters.notes ? dayNotes : []).filter(n => {
                         if (!hasTime(n.date)) return false;
                         const noteHour = getHour(n.date);
                         const noteMinute = getMinute(n.date);
@@ -3080,8 +3217,8 @@
                 }
 
                 // 显示没有具体时间的待办和记事
-                const noTimeTodos = dayTodos.filter(t => !hasTime(t.dueDate));
-                const noTimeNotes = dayNotes.filter(n => !hasTime(n.date));
+                const noTimeTodos = (filters.todos ? dayTodos : []).filter(t => !hasTime(t.dueDate));
+                const noTimeNotes = (filters.notes ? dayNotes : []).filter(n => !hasTime(n.date));
 
                 if (noTimeTodos.length > 0 || noTimeNotes.length > 0) {
                     let noTimeHtml = '<div class="week-no-time-area">';
@@ -3160,6 +3297,9 @@
             document.getElementById('eventEndDate').value = defaultDate;
             document.getElementById('eventEndTime').value = `${String(endHour).padStart(2, '0')}:00`;
             document.getElementById('eventReminder').value = '0';
+            document.getElementById('eventRepeat').value = 'none';
+            document.getElementById('customRepeatDays').style.display = 'none';
+            document.querySelectorAll('#customRepeatDays input[type="checkbox"]').forEach(cb => cb.checked = false);
             renderColorPicker();
             document.getElementById('eventModal').classList.add('active');
             currentSelectedTime = null;
@@ -3190,8 +3330,23 @@
                 document.getElementById('eventEndTime').value = '';
             }
             document.getElementById('eventReminder').value = String(event.reminder || 0);
+
+            // Load repeat settings
+            document.getElementById('eventRepeat').value = event.repeat || 'none';
+            onRepeatChange();
+            if (event.repeatDays) {
+                document.querySelectorAll('#customRepeatDays input[type="checkbox"]').forEach(cb => {
+                    cb.checked = event.repeatDays.includes(parseInt(cb.value));
+                });
+            }
+
             renderColorPicker(event.color);
             document.getElementById('eventModal').classList.add('active');
+        }
+
+        function onRepeatChange() {
+            const repeat = document.getElementById('eventRepeat').value;
+            document.getElementById('customRepeatDays').style.display = repeat === 'custom' ? 'block' : 'none';
         }
 
         function renderColorPicker(selectedColor) {
@@ -3223,13 +3378,20 @@
             const endDate = document.getElementById('eventEndDate').value;
             const endTime = document.getElementById('eventEndTime').value;
 
+            const repeat = document.getElementById('eventRepeat').value;
+            const repeatDays = repeat === 'custom'
+                ? Array.from(document.querySelectorAll('#customRepeatDays input[type="checkbox"]:checked')).map(cb => parseInt(cb.value))
+                : [];
+
             const event = {
                 title,
                 description: document.getElementById('eventDesc').value,
                 color: document.getElementById('colorPicker').dataset.selected,
                 start: startDate && startTime ? `${startDate}T${startTime}` : '',
                 end: endDate && endTime ? `${endDate}T${endTime}` : '',
-                reminder: parseInt(document.getElementById('eventReminder').value)
+                reminder: parseInt(document.getElementById('eventReminder').value),
+                repeat,
+                repeatDays
             };
 
             try {
@@ -3263,6 +3425,53 @@
             } catch (e) {
                 alert('删除失败: ' + e.message);
             }
+        }
+
+        // Expand repeat events to all occurrences in the current month view
+        function expandRepeatEvents(dateStr) {
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            // Reset to midnight for proper date comparison
+            date.setHours(0, 0, 0, 0);
+            const dayOfWeek = date.getDay();
+
+            const expanded = [];
+            events.forEach(event => {
+                if (!event.start) return;
+
+                const eventDate = event.start.split('T')[0];
+                const [ey, em, ed] = eventDate.split('-').map(Number);
+                const eventStartDate = new Date(ey, em - 1, ed);
+                eventStartDate.setHours(0, 0, 0, 0);
+
+                // Check if event repeats and should show on this date
+                let shouldShow = false;
+
+                if (!event.repeat || event.repeat === 'none') {
+                    // No repeat - show only on start date
+                    shouldShow = eventDate === dateStr;
+                } else if (event.repeat === 'daily') {
+                    // Every day
+                    shouldShow = date >= eventStartDate;
+                } else if (event.repeat === 'weekly') {
+                    // Same day of week each week
+                    shouldShow = date >= eventStartDate && date.getDay() === eventStartDate.getDay();
+                } else if (event.repeat === 'monthly') {
+                    // Same day of month
+                    shouldShow = date >= eventStartDate && ed === day;
+                } else if (event.repeat === 'yearly') {
+                    // Same month and day
+                    shouldShow = date >= eventStartDate && em === month && ed === day;
+                } else if (event.repeat === 'custom' && event.repeatDays && event.repeatDays.length > 0) {
+                    // Custom days of week
+                    shouldShow = date >= eventStartDate && event.repeatDays.includes(dayOfWeek);
+                }
+
+                if (shouldShow) {
+                    expanded.push(event);
+                }
+            });
+            return expanded;
         }
 
         loadEvents();
